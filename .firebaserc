@@ -1,0 +1,39 @@
+{
+  "projects": {
+    "clanchats": "clanchat-f050c"
+  },
+  "targets": {
+    "clanchats": {
+      "hosting": {
+        "clanchats": [
+          "clanchats"
+        ]
+      }
+    },
+    "clanchat-f050c": {
+      "hosting": {
+        "clanchats": [
+          "clanchats"
+        ]
+      }
+    }
+  },
+  "etags": {},
+  "hosting": [
+    {
+      "target": "clanchats",
+      "public": "build",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
+}
