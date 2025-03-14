@@ -1,5 +1,6 @@
 import { db } from '../firebase';
-import {collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
+
 
 export const createMessage = async (text, userId, roomId, seen) => {
     if (text.length == 0) {
@@ -23,5 +24,30 @@ export const createMessage = async (text, userId, roomId, seen) => {
         console.log("Error creating the Message for: ", text, userId, roomId, createdAt, seen);
     }
 };
+
+export const retrieveMessages = (setMessages) => {
+    // Refer to the correct collection
+    const messagesRef = collection(db, "messages");
+
+    // Request to the database
+    const records = query(messagesRef, orderBy("createdAt", "asc"));
+
+    // Onsnapshot returns an Unsubscribe function, despite subscribing to changes in the database itself.
+    const unsubscribe = onSnapshot(records, (snapshot) => {
+        const messageData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Update the State
+        setMessages(messageData);
+    }, (error) => {
+        // Handle potential errors
+        console.error("Error fetching messages:", error);
+    });
+
+    return unsubscribe;
+    
+}
 
 

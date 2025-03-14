@@ -1,10 +1,14 @@
 import logo from './logo.svg';
 import './App.css';
 import SendMessage from './components/SendMessage';
+import ReadMessage from './components/ReadMessage';
 
 function App() {
   return (
-    <SendMessage />
+    <>
+        <ReadMessage />
+        <SendMessage />
+    </>
   );
 }
 

@@ -16,6 +16,7 @@
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "ajv": "^8.17.1",
     "ajv-keywords": "^5.1.0",
+    "date-fns": "^4.1.0",
     "firebase": "^11.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
