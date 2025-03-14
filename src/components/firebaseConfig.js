@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import {collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
+import {collection, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
 
 
 export const createMessage = async (text, userId, roomId, seen) => {
@@ -12,8 +12,8 @@ export const createMessage = async (text, userId, roomId, seen) => {
         await addDoc(collection(db, "messages"), {
             // Define the Document Model
             text: text,
-            userId: userId,
-            roomId: roomId,
+            userID: userId,
+            roomID: roomId,
             createdAt: serverTimestamp(),
             seen: seen,
         });
@@ -25,22 +25,32 @@ export const createMessage = async (text, userId, roomId, seen) => {
     }
 };
 
-export const retrieveMessages = (setMessages) => {
+export const retrieveMessages = (setMessages, roomID) => {
     // Refer to the correct collection
     const messagesRef = collection(db, "messages");
 
     // Request to the database
-    const records = query(messagesRef, orderBy("createdAt", "asc"));
+    const records = query(
+        messagesRef, 
+        where("roomID", "==", roomID),
+        orderBy("createdAt", "asc")
+    );
 
     // Onsnapshot returns an Unsubscribe function, despite subscribing to changes in the database itself.
     const unsubscribe = onSnapshot(records, (snapshot) => {
-        const messageData = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data()
-        }));
 
-        // Update the State
-        setMessages(messageData);
+        if (snapshot.empty) {
+            console.log("No messages found for room", roomID);
+        }
+        else {
+            const messageData = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+    
+            // Update the State
+            setMessages(messageData);
+        }
     }, (error) => {
         // Handle potential errors
         console.error("Error fetching messages:", error);
