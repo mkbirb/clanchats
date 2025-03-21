@@ -18,16 +18,16 @@ const ReadMessage = () => {
 
     return (
         <>
-            <p> Messages {userID} </p>
-            <p> Room ID {roomID} </p>
-            {messages.map((message) => (
-                <>
-                    <p> {message.createdAt ? message.createdAt.toDate().toLocaleString(): ""} </p>
-                    <li key={message.id}> {message.text} </li>
-                </>
-            ))}
+          <p>Messages {userID}</p>
+          <p>Room ID {roomID}</p>
+          {messages.map((message, index) => (
+            <li key={index}>  
+              <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
+              {message.text}
+            </li>
+          ))}
         </>
-    )
+      );
     
 }
 

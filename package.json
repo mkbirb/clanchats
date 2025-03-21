@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "@tailwindcss/postcss": "^4.0.15",
     "ajv": "^8.17.1",
     "ajv-keywords": "^5.1.0",
     "autoprefixer": "^10.4.21",

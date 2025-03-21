@@ -28,4 +28,4 @@ let analytics;
 if (typeof window !== "undefined") {
   analytics = getAnalytics(app);
 }
-export { db }; // This exports the db object so it can be imported in other files
+export { db }; 

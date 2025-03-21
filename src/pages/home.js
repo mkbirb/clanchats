@@ -9,7 +9,7 @@ const Home = () => {
             <ChatList />
             <ReadMessage />
             <SendMessage/>
-            <h1>Welcome to ClansChat!</h1>
+            <h1 className="font-mono text-3xl font-bold text-red-600"> Welcome dddtos!</h1>
         </>
     )
 }
