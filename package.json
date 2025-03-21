@@ -4,8 +4,9 @@
   "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
   "main": "index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "next start",
+    "build": "next build",
+    "dev": "next dev",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -16,11 +17,14 @@
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "ajv": "^8.17.1",
     "ajv-keywords": "^5.1.0",
+    "autoprefixer": "^10.4.21",
     "date-fns": "^4.1.0",
     "firebase": "^11.4.0",
+    "next": "^15.2.3",
+    "postcss": "^8.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-scripts": "^5.0.1",
+    "tailwindcss": "^4.0.15",
     "web-vitals": "^4.2.4"
   },
   "browserslist": {

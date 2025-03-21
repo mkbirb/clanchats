@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import {retrieveMessages} from "./firebaseConfig.js";
 import { format } from "date-fns"; 
-import { CurrentUser } from '../App';
+import { useCurrentUser } from "../context/CurrentUserContext"; 
 
 
 const ReadMessage = () => {
     const [messages, setMessages] = useState([]);
-    const { userID, roomID } = useContext(CurrentUser); 
+    const { userID, roomID } = useCurrentUser(); 
 
     useEffect(() => {
         console.log("Room ID:", roomID);

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
-import { CurrentUser } from '../App';
+import { useCurrentUser } from "../context/CurrentUserContext"; 
 
 
 const ChatList = () => {
-    const { userID, roomID, changeRoomID } = useContext(CurrentUser); 
+    const { userID, roomID, changeRoomID } = useCurrentUser(); 
 
     return (
         <>

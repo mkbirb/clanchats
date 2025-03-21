@@ -1,10 +1,10 @@
 import React, { useState, useContext } from "react";
 import {createMessage} from "./firebaseConfig.js";
-import { CurrentUser } from '../App';
+import { useCurrentUser } from "../context/CurrentUserContext"; 
 
 const SendMessage = () => {
     const [message, setMessage] = useState("");
-    const { userID, roomID, changeRoomID } = useContext(CurrentUser); 
+    const { userID, roomID, changeRoomID } = useCurrentUser();
 
     function handleSend()  {
         const seen = false;
