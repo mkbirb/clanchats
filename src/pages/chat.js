@@ -3,7 +3,7 @@ import SendMessage from "../components/SendMessage";
 import ReadMessage from "../components/ReadMessage";
 import ChatList from "../components/ChatList";
 
-const Chat = () => {
+const chat = () => {
     return (
         <>
             <ChatList />
@@ -14,4 +14,4 @@ const Chat = () => {
     )
 }
 
-export default Chat;
+export default chat;

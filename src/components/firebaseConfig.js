@@ -1,5 +1,6 @@
-import { db } from '../firebase';
-import {collection, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
+import { db, auth } from '../firebase';
+import {collection, getDocs, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 
 export const createMessage = async (text, userId, roomId, seen) => {
@@ -59,5 +60,98 @@ export const retrieveMessages = (setMessages, roomID) => {
     return unsubscribe;
     
 }
+
+export const createUser = async (email, username, accountName, password) => {
+    try {
+
+        if (!email || !username || !accountName || !password) {
+            alert("All fields are required!");
+            return false;
+        }
+
+        console.log("All fields are present, continuing execution...");
+
+        // Check whether the Username already exists.
+        const userRef = collection(db, "users");
+        const userNameQuery = query(userRef, where("username", "==", username));
+        const emailQuery = query(userRef, where("email", "==", email));
+        const emailQuerySnapshot = await getDocs(emailQuery);
+        const usernameQuerySnapshot = await getDocs(userNameQuery);
+
+        if (!usernameQuerySnapshot.empty) {
+            alert("Username is already taken.");
+            return false;
+        }
+        
+        if (!emailQuerySnapshot.empty) {
+            alert("Email is already in use. Please choose another email.");
+            return false;
+        }
+
+        // Create the User, if Username does not exist yet in database
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+            email: email,
+            username: username,
+            name: accountName,
+            createdAt: new Date(),
+        });
+
+        return true;
+
+      } 
+      catch (error) {
+        console.error("Signup error:", error.message);
+        return false;
+      }
+}
+
+export const retrieveUser = async (email, password) => {
+    try {
+        const userRef = collection(db, "users");
+        const emailQuery = query(userRef, where("email", "==", email));
+        const emailQuerySnapshot = await getDocs(emailQuery);
+
+        if (emailQuerySnapshot.empty) {
+            // Email does not exist in Firestore, notify user or return error
+            alert("Email not found, maybe Signup Instead.");
+            return null;
+        }
+
+        if (!email || !password) {
+            alert("All fields are required!");
+            return null;
+        }
+
+        // Attempt to Sign In with Valid Email
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        return user;
+    } 
+    catch (error) {
+        console.error("Login error: ", error.message);
+
+        if (error.code === "auth/invalid-credential") {
+            alert("Incorrect password. Please try again.");
+        } 
+        else {
+            alert("An error occurred during login. Please try again later.");
+        }
+
+        return null;
+    }
+}
+
+export const logout = async () => {
+    try {
+        await signOut(auth);
+    }
+    catch(error) {
+        console.error("Logout error: ", error.message);
+    }
+};
 
 

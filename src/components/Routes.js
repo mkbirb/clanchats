@@ -2,7 +2,9 @@
 
 export const Routes = {
     HOME: '/home',
-    SIGNUP: '/signUp'
+    SIGNUP: '/signUp',
+    LOGIN: '/login',
+    CHAT: '/chat',
 }
 
 export const navigateTo = (router, route) => {

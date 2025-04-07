@@ -14,7 +14,7 @@ const home = () => {
         <>
             <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome Clanschat!!</h1>
             <button onClick={() => handleClick('SIGNUP')}> Sign Up </button>
-            <button> Login </button>
+            <button onClick={() => handleClick('LOGIN')}> Login </button>
         </>
     )
 }
