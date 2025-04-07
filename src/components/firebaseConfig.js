@@ -1,15 +1,15 @@
-import { db, auth } from '../firebase';
+import { db, auth} from '../firebase';
 import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
-
-export const createMessage = async (text, userId, roomId, seen) => {
-    if (text.length == 0) {
+export const createMessage = async (text, userId, roomId, seen, imageUrl = null) => {
+    if ((text.length == 0) && (imageUrl == null)){
         // Prevents Empty Messages
         return;
     }
 
     try {
+        // Add the Message to the Firestore
         await addDoc(collection(db, "messages"), {
             // Define the Document Model
             text: text,
@@ -17,6 +17,7 @@ export const createMessage = async (text, userId, roomId, seen) => {
             roomID: roomId,
             createdAt: serverTimestamp(),
             seen: seen,
+            imageURL: imageUrl,
         });
         console.log("Sent Message");
     }

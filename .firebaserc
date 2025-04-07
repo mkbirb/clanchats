@@ -1,6 +1,7 @@
 {
   "projects": {
-    "clanchats": "clanchat-f050c"
+    "clanchats": "clanchat-f050c",
+    "default": "clanchat-f050c"
   },
   "targets": {
     "clanchats": {

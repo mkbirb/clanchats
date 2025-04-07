@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
 import {retrieveMessages} from "./firebaseConfig.js";
-import { format } from "date-fns"; 
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 
 
@@ -24,6 +23,15 @@ const ReadMessage = () => {
             <li key={index}>  
               <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
               {message.text}
+              {message.imageURL && (
+                <div>
+                  <img
+                    src={message.imageURL}
+                    alt="Uploaded content"
+                    style={{ maxWidth: "300px", maxHeight: "300px" }}
+                  />
+                </div>
+              )}
             </li>
           ))}
         </>
