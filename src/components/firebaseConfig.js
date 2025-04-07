@@ -78,13 +78,20 @@ export const createUser = async (email, username, accountName, password) => {
         const emailQuerySnapshot = await getDocs(emailQuery);
         const usernameQuerySnapshot = await getDocs(userNameQuery);
 
+        if (!emailQuerySnapshot.empty) {
+            alert("Email is already in use. Please choose another email.");
+            return false;
+        }
+        
         if (!usernameQuerySnapshot.empty) {
             alert("Username is already taken.");
             return false;
         }
-        
-        if (!emailQuerySnapshot.empty) {
-            alert("Email is already in use. Please choose another email.");
+
+        // Minimum 6 characters, at least one letter, one number, and one special character
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
+        if (!passwordRegex.test(password)) {
+            alert("Password must be at least 6 characters long and include at least one letter, one number, and one special character.");
             return false;
         }
 
