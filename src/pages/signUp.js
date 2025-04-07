@@ -3,6 +3,7 @@ import {useRouter} from "next/router";
 import {createUser} from "../components/firebaseConfig.js";
 import {navigateTo} from '../components/Routes';
 
+
 const signUp = () => {
     const [email, setEmail] = useState("");
     const [username, setUsername] = useState("");

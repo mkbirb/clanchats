@@ -1,5 +1,5 @@
 import { db, auth } from '../firebase';
-import {collection, getDocs, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
+import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 
@@ -82,7 +82,7 @@ export const createUser = async (email, username, accountName, password) => {
             alert("Email is already in use. Please choose another email.");
             return false;
         }
-        
+
         if (!usernameQuerySnapshot.empty) {
             alert("Username is already taken.");
             return false;
@@ -135,6 +135,13 @@ export const retrieveUser = async (email, password) => {
         // Attempt to Sign In with Valid Email
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+
+        // Add the Username to the User Object
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          user.username = userData.username;  
+        }
 
         return user;
     } 

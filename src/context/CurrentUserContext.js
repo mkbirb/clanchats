@@ -6,13 +6,18 @@ const CurrentUserContext = createContext();
 export function CurrentUserProvider({ children }) {
     const [userID, setUserID] = useState(1);
     const [roomID, setRoomID] = useState(1);
+    const [user, setUser] = useState("");
   
     function changeRoomID(newRoomID) {
       setRoomID(newRoomID);
     }
+
+    function changeUser(newUser) {
+      setUser(newUser);
+    }
   
     return (
-      <CurrentUserContext.Provider value={{ userID, roomID, changeRoomID }}>
+      <CurrentUserContext.Provider value={{ userID, roomID, user, changeRoomID, changeUser }}>
         {children}
       </CurrentUserContext.Provider>
     );

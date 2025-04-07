@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import {useRouter} from "next/router";
 import {retrieveUser} from "../components/firebaseConfig.js";
 import {navigateTo} from '../components/Routes';
+import { useCurrentUser } from "../context/CurrentUserContext"; 
 
 const login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const router = useRouter();
+
+    const { changeUser } = useCurrentUser(); 
 
     const handleSubmit = async(e) => {
         // Prevent refresh so we keep all the States still
@@ -20,7 +23,9 @@ const login = () => {
                 alert("Login successful!");
 
                 // Navigate to Login Page, when Sign Up Sucessful
-                navigateTo(router, "CHAT")
+                navigateTo(router, "CHAT");
+                
+                changeUser(user);
             }
         }
         catch {
