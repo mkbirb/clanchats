@@ -1,12 +1,17 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {createMessage} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { uploadImageToImgBB } from '../utils/imageUpload';
+import { ReplyContext } from "../context/ReplyContext.js";
+import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 
 const SendMessage = () => {
     const [message, setMessage] = useState("");
     const { userID, roomID, changeRoomID } = useCurrentUser();
     const [image, setImage] = useState(null);
+    const {replyTo, setReplyTo} = useContext(ReplyContext);
+
+    const [originalMessage, setOriginalMessage] = useFetchOriginalMessage(replyTo);
 
     const handleSend = async(e) =>  {
         e.preventDefault();
@@ -20,15 +25,23 @@ const SendMessage = () => {
           imageUrl = await uploadImageToImgBB(image); 
         }
 
-        await createMessage(message, userID, roomID, seen, imageUrl); 
+        await createMessage(message, userID, roomID, seen, imageUrl, replyTo); 
         
         // Reset the Message
         setMessage("");
         setImage(null);
+        setReplyTo(null);
+        setOriginalMessage(null);
     }
     return (
         <>
             <form onSubmit={handleSend}>
+                {originalMessage && (
+                    <div>
+                        <p> Replying To</p>
+                        <p> {originalMessage.text} </p>
+                    </div>
+                )}
                 <textarea 
                     placeholder="Send a Message" 
                     value={message}

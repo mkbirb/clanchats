@@ -2,7 +2,7 @@ import { db, auth} from '../firebase';
 import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
-export const createMessage = async (text, userId, roomId, seen, imageUrl = null) => {
+export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null) => {
     if ((text.length == 0) && (imageUrl == null)){
         // Prevents Empty Messages
         return;
@@ -18,6 +18,7 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null)
             createdAt: serverTimestamp(),
             seen: seen,
             imageURL: imageUrl,
+            replyTo: replyTo,
         });
         console.log("Sent Message");
     }

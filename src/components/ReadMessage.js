@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useContext } from "react";
 import {retrieveMessages} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
+import { ReplyContext } from '../context/ReplyContext';
+import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
+import RepliedMessage from "./RepliedMessage";
 
 
 const ReadMessage = () => {
     const [messages, setMessages] = useState([]);
     const { userID, roomID } = useCurrentUser(); 
+
+    const {replyTo, setReplyTo} = useContext(ReplyContext);
+
+    const originalMessage = useFetchOriginalMessage(replyTo);
 
     useEffect(() => {
         console.log("Room ID:", roomID);
@@ -22,6 +29,8 @@ const ReadMessage = () => {
           {messages.map((message, index) => (
             <li key={index}>  
               <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
+              <button onClick={() => setReplyTo(message.id)}> Reply </button>
+              <RepliedMessage replyTo={message.replyTo} />
               {message.text}
               {message.imageURL && (
                 <div>
