@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import {retrieveMessages} from "./firebaseConfig.js";
+import {retrieveMessages, deleteMessage} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
@@ -22,6 +22,10 @@ const ReadMessage = () => {
         return () => unsubscribe();
     }, [roomID]);
 
+    const handleDelete = (messageId) => {
+      deleteMessage(messageId);
+    }
+
     return (
         <>
           <p>Messages {userID}</p>
@@ -30,6 +34,7 @@ const ReadMessage = () => {
             <li key={index}>  
               <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
               <button onClick={() => setReplyTo(message.id)}> Reply </button>
+              <button onClick={() => handleDelete(message.id)}> Delete </button>
               <RepliedMessage replyTo={message.replyTo} />
               {message.text}
               {message.imageURL && (

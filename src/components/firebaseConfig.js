@@ -1,5 +1,5 @@
 import { db, auth} from '../firebase';
-import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot } from "firebase/firestore";
+import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null) => {
@@ -61,6 +61,16 @@ export const retrieveMessages = (setMessages, roomID) => {
 
     return unsubscribe;
     
+}
+
+export const deleteMessage = async (messageId) => {
+    try {
+        await deleteDoc(doc(db, "messages", messageId));
+        console.log("Message was able to be deleted")
+    }
+    catch(error) {
+        console.log("Message deletion unsuccessful");
+    }
 }
 
 export const createUser = async (email, username, accountName, password) => {
