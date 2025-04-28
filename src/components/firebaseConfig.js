@@ -1,5 +1,5 @@
 import { db, auth} from '../firebase';
-import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc } from "firebase/firestore";
+import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
 export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null) => {
@@ -16,6 +16,7 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
             userID: userId,
             roomID: roomId,
             createdAt: serverTimestamp(),
+            editedAt: null,
             seen: seen,
             imageURL: imageUrl,
             replyTo: replyTo,
@@ -70,6 +71,22 @@ export const deleteMessage = async (messageId) => {
     }
     catch(error) {
         console.log("Message deletion unsuccessful");
+    }
+}
+
+export const editMessage = async (messageId, newText) => {
+    // Updates the Message with the new text and the Date/Time the message was edited
+    try {
+        const messageRef = doc(db, "messages", messageId);
+
+        await updateDoc(messageRef, {
+            text: newText,
+            editedAt: Date.now()
+        })
+        console.log("Message was edited");
+    }
+    catch(error) {
+        console.log("Message cannot be edited");
     }
 }
 
