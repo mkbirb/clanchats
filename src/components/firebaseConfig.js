@@ -79,11 +79,27 @@ export const editMessage = async (messageId, newText) => {
     try {
         const messageRef = doc(db, "messages", messageId);
 
-        await updateDoc(messageRef, {
-            text: newText,
-            editedAt: Date.now()
-        })
-        console.log("Message was edited");
+        const messageSnapshot = await getDoc(messageRef);
+        
+        if (messageSnapshot.exists()) {
+            // Get the Current Text from the Message
+            const currentText = messageSnapshot.data().text;
+            // Only update the Message stored in the Database, if the New Text is actualy differenrt
+            // To the Text being stored
+            if (currentText !== newText) {
+                await updateDoc(messageRef, {
+                    text: newText,
+                    editedAt: Date.now()
+                })
+                console.log("Message was edited");
+            }
+            else {
+                console.log("Message was the same, so no point of editing");
+            }
+        }
+        else {
+            console.log("Message cannot be found");
+        }
     }
     catch(error) {
         console.log("Message cannot be edited");

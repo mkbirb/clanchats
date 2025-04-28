@@ -32,6 +32,28 @@ const ReadMessage = () => {
       editMessage(messageId, editText);
     }
 
+    // Formatting of the Date and the Time
+    const formatDateTime = (date) => {
+      const formattedDate = date.toLocaleDateString('en-GB', {
+        // Day of the Week
+        weekday: 'long',
+        // The Full Year
+        year: 'numeric',
+        // The Full Month Name
+        month: 'long',  
+        // Day Date Number
+        day: 'numeric'   
+      });
+      
+      // 24 Hour clock like 00:39
+      const formattedTime = date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',  
+        minute: '2-digit' 
+      });
+
+      return `${formattedDate} ${formattedTime}`
+    }
+
     return (
         <>
           <p>Messages {userID}</p>
@@ -39,6 +61,7 @@ const ReadMessage = () => {
           {messages.map((message, index) => (
             <li key={index}>  
               <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
+              <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
               <button onClick={() => setReplyTo(message.id)}> Reply </button>
               <button onClick={() => handleDelete(message.id)}> Delete </button>
               <button onClick={() =>  {
