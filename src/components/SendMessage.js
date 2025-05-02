@@ -4,14 +4,20 @@ import { useCurrentUser } from "../context/CurrentUserContext";
 import { uploadImageToImgBB } from '../utils/imageUpload';
 import { ReplyContext } from "../context/ReplyContext.js";
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
+import EmojiPicker from './EmojiPicker.js';
 
 const SendMessage = () => {
     const [message, setMessage] = useState("");
     const { userID, roomID, changeRoomID } = useCurrentUser();
     const [image, setImage] = useState(null);
     const {replyTo, setReplyTo} = useContext(ReplyContext);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const [originalMessage, setOriginalMessage] = useFetchOriginalMessage(replyTo);
+
+    const addEmoji = (emoji) => {
+        setMessage(prev => prev + emoji.native);
+    }
 
     const handleSend = async(e) =>  {
         e.preventDefault();
@@ -42,10 +48,18 @@ const SendMessage = () => {
                         <p> {originalMessage.text} </p>
                     </div>
                 )}
+                <EmojiPicker onEmojiSelect={addEmoji} />
                 <textarea 
                     placeholder="Send a Message" 
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}/>
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                        // Also ensures that Shift + Enter still creates a New Line
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend(e);
+                        }
+                    }}/>
                 <input 
                     type="file"
                     onChange={(e) => setImage(e.target.files[0])}

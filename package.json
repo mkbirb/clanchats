@@ -14,6 +14,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@emoji-mart/data": "^1.2.1",
+    "@emoji-mart/react": "^1.1.1",
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "@tailwindcss/postcss": "^4.0.15",
     "ajv": "^8.17.1",
@@ -22,6 +24,7 @@
     "axios": "^1.8.4",
     "date-fns": "^4.1.0",
     "discord.js": "^14.18.0",
+    "emoji-mart": "^5.6.0",
     "firebase": "^11.4.0",
     "multer": "^1.4.5-lts.2",
     "next": "^15.2.3",
