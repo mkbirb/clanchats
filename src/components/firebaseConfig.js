@@ -1,6 +1,7 @@
 import { db, auth} from '../firebase';
 import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
 
 export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null) => {
     if ((text.length == 0) && (imageUrl == null)){
@@ -202,6 +203,30 @@ export const retrieveUser = async (email, password) => {
 
         return null;
     }
+}
+
+// Search for users in the Firestore that begin with the Input
+export const searchUsers = async (input) => {
+    if (input.trim() === '') return [];
+
+    // Search in the Firestore
+    const q = query(
+        collection(db, "users"),
+        // Range that returns all of the Usernames that start with the Input String
+        where('username', '>=', input),
+        where('username', '<=', input + '\uf8ff')
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    const searchList = [];
+
+    // Store each of the Usernames found in the list
+    querySnapshot.forEach(doc => {
+        searchList.push(doc.data().username);
+    })
+
+    return searchList;
 }
 
 export const logout = async () => {
