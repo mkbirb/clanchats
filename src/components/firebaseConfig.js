@@ -1,9 +1,9 @@
 import { db, auth} from '../firebase';
-import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc } from "firebase/firestore";
+import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, deleteField } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
 
-export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null) => {
+export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null, reactions = null) => {
     if ((text.length == 0) && (imageUrl == null)){
         // Prevents Empty Messages
         return;
@@ -21,6 +21,9 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
             seen: seen,
             imageURL: imageUrl,
             replyTo: replyTo,
+            reactions: {},
+            // Stores which Emoji has been reacted to by which User
+            userReactions: {}
         });
         console.log("Sent Message");
     }
@@ -228,6 +231,64 @@ export const searchUsers = async (input) => {
 
     return searchList;
 }
+
+export const addReaction = async (messageId, userId, emoji) => {
+    // Recall that the Reaction Field Structure is "😂": 2
+    // While the UserReaction Field Structure is userId123: "😂"
+
+    // Get the Message that we want to react too
+    const messageRef = doc(db, "messages", messageId);
+    const messageSnapshot = await getDoc(messageRef);
+
+    if (!messageSnapshot.exists()) {
+        throw new Error("Message not found, so therefore cannot add new Reaction");
+    }
+
+    const data = messageSnapshot.data();
+    const userReactions = data.userReactions || {};
+
+    if (userReactions[userId] === emoji) {
+        console.log("User already reacted with this Emoji");
+
+        // The Reaction is removed, if the Reaction is selected again
+        await updateDoc(messageRef, {
+            [`reactions.${emoji}`]: increment(-1),
+            [`userReactions.${userId}`]: deleteField(),
+
+        })
+        return;
+    }
+    else {
+        // Track what Reactions are done by the User and increment the Reaction selected
+        await updateDoc(messageRef, {
+            [`reactions.${emoji}`]: increment(1),
+            [`userReactions.${userId}`]: emoji
+        })
+    }
+}
+
+export const listenToReactions = (messages, onUpdate) => {
+    const unsubscribers = [];
+  
+    messages.forEach((message) => {
+      const messageRef = doc(db, "messages", message.id);
+  
+      const unsubscribe = onSnapshot(messageRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // Update the Message with the Reaction Emoji and its Counts
+          onUpdate(message.id, data.reactions || {});
+        }
+      });
+  
+      unsubscribers.push(unsubscribe);
+    });
+  
+    // Return a function to unsubscribe all
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  };
 
 export const logout = async () => {
     try {

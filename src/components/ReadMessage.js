@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
-import {retrieveMessages, deleteMessage, editMessage} from "./firebaseConfig.js";
+import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 import RepliedMessage from "./RepliedMessage";
+import ReactionPicker from "./ReactionPicker.js";
 
 
 const ReadMessage = () => {
@@ -16,6 +17,11 @@ const ReadMessage = () => {
 
     const originalMessage = useFetchOriginalMessage(replyTo);
 
+    // For the Reactions
+    const [reactions, setReactions] = useState({});
+    // Displays the Reaction Pickers for the specific Message
+    const [showReactionPicker, setShowReactionPicker] = useState(null);
+
     useEffect(() => {
         console.log("Room ID:", roomID);
         const unsubscribe = retrieveMessages(setMessages, roomID);
@@ -24,12 +30,33 @@ const ReadMessage = () => {
         return () => unsubscribe();
     }, [roomID]);
 
+    // Updates the Messages Reactions based on Database
+    useEffect(() => {
+      const unsubscribe = listenToReactions(messages, (messageId, reactionData) => {
+        setReactions(prev => ({
+          ...prev,
+          [messageId]: reactionData
+        }));
+      });
+    
+      return () => unsubscribe();
+    }, [messages]);
+
     const handleDelete = (messageId) => {
       deleteMessage(messageId);
     }
 
     const handleEdit = (messageId) => {
       editMessage(messageId, editText);
+    }
+
+    const handleReaction = async (messageId, emoji) => {
+        try {
+          await addReaction(messageId, userID, emoji);
+        }
+        catch(error) {
+          console.log("Reaction had Failed ", error);
+        }
     }
 
     // Formatting of the Date and the Time
@@ -92,6 +119,32 @@ const ReadMessage = () => {
                   />
                 </div>
               )}
+
+              <button onClick={
+                // Open the Reaction Picker if null, where if Reaction Picker already set to Message ID and is therefore showing
+                // When React button is clicked again, we set it to Null to hide the Reaction Picker
+                () => setShowReactionPicker(showReactionPicker === message.id ? null: message.id)
+              }>
+                👍
+              </button>
+              {
+                showReactionPicker === message.id && (
+                  // Update the State and then close the Reaction Picker
+                  <ReactionPicker onSelect={(emoji) => {
+                    handleReaction(message.id, emoji);
+                    setShowReactionPicker(null);
+                    }}
+                  />
+                )
+              }
+              <div style={{ marginTop: '0.5rem' }}>
+                { // Display the Reaction Emoji with its corresponding Reaction Count
+                  Object.entries(reactions[message.id] || {}).map(([emoji, count]) => (
+                  <span key={emoji}>
+                    {emoji} {count}
+                  </span>
+                ))}
+              </div>
             </li>
           ))}
         </>
