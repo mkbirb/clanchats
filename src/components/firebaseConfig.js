@@ -472,4 +472,24 @@ export const retrieveRoom = async(firstPersonID, secondPersonID) => {
     };
 }
 
+export const getClansBasedOnUser = async(userID) => {
+    try {
+        const clansRef = collection(db, "clan");
+
+        const membersQuery = query(clansRef, where("members", "array-contains", userID));
+
+        const snapshot = await getDocs(membersQuery);
+
+        //Return the Document ID as well
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    }
+    catch(error) {
+        console.error("Failed to fetch clans user belongs to:", error);
+        return [];
+    }
+}
+
 

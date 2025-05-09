@@ -5,6 +5,7 @@ import ChatList from "../../components/ChatList";
 import { useCurrentUser } from "../../context/CurrentUserContext"; 
 import { useRouter } from 'next/router';
 import { retrieveClan } from "../../components/firebaseConfig";
+import { navigateTo } from "../../components/Routes";
 
 const chat = () => {
 
@@ -51,6 +52,7 @@ const chat = () => {
                 // Display once already fetched the Clan Data
                 clanData ? (
                     <>
+                        <button onClick={() =>navigateTo(router, "DASHBOARD") }> To Dashboard </button>
                         <h1 className="font-mono text-3xl font-bold text-blue-600"> Clan: {clanData.name}!</h1>
                         <ChatList clanData={clanData} />
                         <ReadMessage />

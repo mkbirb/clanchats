@@ -6,6 +6,7 @@ import { uploadImageToImgBB } from '../utils/imageUpload';
 import {navigateTo} from '../components/Routes';
 import {useRouter} from "next/router";
 import { useCurrentUser } from "../context/CurrentUserContext.js";
+import DisplayMyClans from "../components/DisplayMyClans.js";
 
 const dashboard = () => {
     const [displayCreateClanModal, setDisplayCreateClanModal] = useState(false);
@@ -25,7 +26,7 @@ const dashboard = () => {
     // For the Navigation to success page
     const router = useRouter();
 
-    const { user } = useCurrentUser(); 
+    const { user, userID } = useCurrentUser(); 
 
     // Get the searching of Usernames when User begins to type to add individuals to the clan
     const fetchUsernames = async () => {
@@ -62,11 +63,14 @@ const dashboard = () => {
         try {
             
             // Translate the Usernames choosen into User IDs that would then be stored in the Database
-            const listOfClanMembers = await getSpecificUsersIDs(clanMemberList);
+            let listOfClanMembers = await getSpecificUsersIDs(clanMemberList);
+            // Add the User creating the Clan as well into the List
+            listOfClanMembers = [userID, ...listOfClanMembers];
+
             const clanCreatedID = await createClan(clanName, imageUrl, listOfClanMembers, clanDescription);
 
             if (clanCreatedID) {
-                alert("Account created successfully!");
+                alert("Clan created successfully!");
 
                 // Navigate to Chat Page when Clan Creation sucessful
                 navigateTo(router, "CHAT", clanCreatedID)
@@ -154,6 +158,7 @@ const dashboard = () => {
                 </form>
                 <button onClick={() => {setDisplayCreateClanModal(false)}}> Cancel </button>
             </Modal>
+            <DisplayMyClans />
         </>
     )
 }
