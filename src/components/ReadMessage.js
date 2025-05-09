@@ -5,6 +5,7 @@ import { ReplyContext } from '../context/ReplyContext';
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 import RepliedMessage from "./RepliedMessage";
 import ReactionPicker from "./ReactionPicker.js";
+import ViewImage from "./ViewImage.js";
 
 
 const ReadMessage = () => {
@@ -116,13 +117,7 @@ const ReadMessage = () => {
               ) : (<p>{message.text} </p>)}
 
               {message.imageURL && (
-                <div>
-                  <img
-                    src={message.imageURL}
-                    alt="Uploaded content"
-                    style={{ maxWidth: "300px", maxHeight: "300px" }}
-                  />
-                </div>
+                <ViewImage src={message.imageURL} />
               )}
 
               <button onClick={
