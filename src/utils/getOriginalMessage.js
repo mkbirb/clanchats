@@ -1,13 +1,13 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-export const getOriginalMesssage = async(replyToId) => {
+export const getOriginalMesssage = async(replyToId, roomID) => {
     if(!replyToId) {
         console.log("No Reply ID given for getting the Original Message");
         return null;
     }
 
-    const msgRef = doc(db, "messages", replyToId);
+    const msgRef = doc(db, "rooms", roomID, "messages", replyToId);
 
     // Fetch the Document from Firebase
     const msgSnap = await getDoc(msgRef);

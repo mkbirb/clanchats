@@ -24,6 +24,11 @@ const ReadMessage = () => {
 
     useEffect(() => {
         console.log("Room ID:", roomID);
+
+        if (!roomID) {
+            console.log("Invalid or missing roomID, cannot fetch messages.");
+            return;  
+        }
         const unsubscribe = retrieveMessages(setMessages, roomID);
 
         // Cleanup Function
@@ -37,22 +42,22 @@ const ReadMessage = () => {
           ...prev,
           [messageId]: reactionData
         }));
-      });
+      }, roomID);
     
       return () => unsubscribe();
     }, [messages]);
 
     const handleDelete = (messageId) => {
-      deleteMessage(messageId);
+      deleteMessage(messageId, roomID);
     }
 
     const handleEdit = (messageId) => {
-      editMessage(messageId, editText);
+      editMessage(messageId, editText, roomID);
     }
 
     const handleReaction = async (messageId, emoji) => {
         try {
-          await addReaction(messageId, userID, emoji);
+          await addReaction(messageId, userID, emoji, roomID);
         }
         catch(error) {
           console.log("Reaction had Failed ", error);

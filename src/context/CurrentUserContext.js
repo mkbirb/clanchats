@@ -4,8 +4,8 @@ const CurrentUserContext = createContext();
 
 // Provider component
 export function CurrentUserProvider({ children }) {
-    const [userID, setUserID] = useState(1);
-    const [roomID, setRoomID] = useState(1);
+    const [userID, setUserID] = useState();
+    const [roomID, setRoomID] = useState();
     const [user, setUser] = useState("");
   
     function changeRoomID(newRoomID) {
@@ -14,6 +14,8 @@ export function CurrentUserProvider({ children }) {
 
     function changeUser(newUser) {
       setUser(newUser);
+      console.log("Head ", newUser.id);
+      setUserID(newUser.id);
     }
   
     return (

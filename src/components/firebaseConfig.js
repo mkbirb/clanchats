@@ -11,7 +11,7 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
 
     try {
         // Add the Message to the Firestore
-        await addDoc(collection(db, "messages"), {
+        await addDoc(collection(db, "rooms", roomId, "messages"), {
             // Define the Document Model
             text: text,
             userID: userId,
@@ -29,18 +29,17 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
     }
     catch(error) {
         alert("Error creating the Message: " + error);
-        console.log("Error creating the Message for: ", text, userId, roomId, createdAt, seen);
+        console.log("Error creating the Message for: ", text, userId, roomId);
     }
 };
 
 export const retrieveMessages = (setMessages, roomID) => {
     // Refer to the correct collection
-    const messagesRef = collection(db, "messages");
+    const messagesRef = collection(db, "rooms", roomID, "messages");
 
     // Request to the database
     const records = query(
         messagesRef, 
-        where("roomID", "==", roomID),
         orderBy("createdAt", "asc")
     );
 
@@ -68,9 +67,9 @@ export const retrieveMessages = (setMessages, roomID) => {
     
 }
 
-export const deleteMessage = async (messageId) => {
+export const deleteMessage = async (messageId, roomID) => {
     try {
-        await deleteDoc(doc(db, "messages", messageId));
+        await deleteDoc(doc(db, "rooms", roomID, "messages", messageId));
         console.log("Message was able to be deleted")
     }
     catch(error) {
@@ -78,10 +77,10 @@ export const deleteMessage = async (messageId) => {
     }
 }
 
-export const editMessage = async (messageId, newText) => {
+export const editMessage = async (messageId, newText, roomID) => {
     // Updates the Message with the new text and the Date/Time the message was edited
     try {
-        const messageRef = doc(db, "messages", messageId);
+        const messageRef = doc(db, "rooms", roomID, "messages", messageId);
 
         const messageSnapshot = await getDoc(messageRef);
         
@@ -187,12 +186,14 @@ export const retrieveUser = async (email, password) => {
 
         // Add the Username to the User Object
         const userDoc = await getDoc(doc(db, "users", user.uid));
+        let userData;
+
         if (userDoc.exists()) {
-          const userData = userDoc.data();
+          userData = { id: userDoc.id, ...userDoc.data() };
           user.username = userData.username;  
         }
 
-        return user;
+        return userData;
     } 
     catch (error) {
         console.error("Login error: ", error.message);
@@ -204,6 +205,41 @@ export const retrieveUser = async (email, password) => {
             alert("An error occurred during login. Please try again later.");
         }
 
+        return null;
+    }
+}
+
+// Get the Specific Users Document based on their Usernames
+export const getSpecificUsersIDs = async (usernames) => {
+    const usersIDList = [];
+    
+    for (const name of usernames) {
+        const q = query(collection(db, "users"), where("username", "==", name));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+            const userDoc = snapshot.docs[0];
+            usersIDList.push(userDoc.id);
+        } 
+        else {
+            console.warn(`Username "${name}" not found in users collection.`);
+        }
+    }
+
+    return usersIDList;
+}
+
+// Retrieves the User Document based on UserID
+export const getUserByID = async(userID) => {
+    const userRef = doc(db, "users", userID);
+
+    const userSnapshot = await getDoc(userRef);
+
+    if (userSnapshot.exists()) {
+        return userSnapshot.data();
+    }
+    else {
+        console.warn("No user found for the ID ", userID);
         return null;
     }
 }
@@ -232,12 +268,12 @@ export const searchUsers = async (input) => {
     return searchList;
 }
 
-export const addReaction = async (messageId, userId, emoji) => {
+export const addReaction = async (messageId, userId, emoji, roomID) => {
     // Recall that the Reaction Field Structure is "😂": 2
     // While the UserReaction Field Structure is userId123: "😂"
 
     // Get the Message that we want to react too
-    const messageRef = doc(db, "messages", messageId);
+    const messageRef = doc(db, "rooms", roomID, "messages", messageId);
     const messageSnapshot = await getDoc(messageRef);
 
     if (!messageSnapshot.exists()) {
@@ -267,11 +303,11 @@ export const addReaction = async (messageId, userId, emoji) => {
     }
 }
 
-export const listenToReactions = (messages, onUpdate) => {
+export const listenToReactions = (messages, onUpdate, roomID) => {
     const unsubscribers = [];
   
     messages.forEach((message) => {
-      const messageRef = doc(db, "messages", message.id);
+      const messageRef = doc(db, "rooms", roomID, "messages", message.id);
   
       const unsubscribe = onSnapshot(messageRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -298,5 +334,142 @@ export const logout = async () => {
         console.error("Logout error: ", error.message);
     }
 };
+
+export const createClan = async (clanName, clanLogo, clanMembers, clanDescription) => {
+    try {
+        if (!clanName || !clanLogo || !clanMembers || !clanDescription) {
+            alert("All fields are needed to create the Clan");
+        }
+
+        const docref = await addDoc(collection(db, "clan"), {
+            name: clanName,
+            logo: clanLogo,
+            members: clanMembers,
+            description: clanDescription,
+            createdAt: serverTimestamp(),
+            gallery: {},
+            timetables: {},
+            customEmojis: {}
+        })
+        
+
+        // Return the ID of the Clan
+        return docref.id;
+    }
+    catch(error) {
+        alert("Error creating the Clan: " + error);
+        console.log("Error creating the Clan for: ", clanName, clanLogo, clanMembers, clanDescription);
+        return null;
+    }
+};
+
+export const retrieveClan = async (clanID) => {
+    try {
+        if (!clanID) {
+            console.log("ClanID is missing, so cannot retrieve Clan");
+        }
+
+        const clanRef = collection(db, "clan");
+        
+        // Get the Document that stores the Clan Information
+        const clanQuery = query(clanRef, where("__name__", "==", clanID));
+        const querySnapshot = await getDocs(clanQuery);
+
+        if (querySnapshot.empty) {
+            console.log("No clan found with the given ID");
+            return null;
+        }
+
+        const clanDoc = querySnapshot.docs[0];
+        return { id: clanDoc.id, ...clanDoc.data() };
+    }
+    catch(error) {
+        console.log("Cannot Retrieve Clan: ", error);
+        return null;
+    }
+}
+
+export const createRoom = async (firstPersonID, secondPersonID) => {
+    const roomRef = collection(db, "rooms");
+
+    const firstPersonIDRef = doc(db, "users", firstPersonID);
+    const secondPersonIDRef = doc(db, "users", secondPersonID);
+
+    await addDoc(roomRef, {
+        person1: firstPersonIDRef,  
+        person2: secondPersonIDRef,  
+        level: {level: 0, experience: 0},
+        streak: 0,
+        roomType: null,
+        messages: [] 
+    });
+};
+
+export const checkRoom = async(firstPersonID, secondPersonID) => {
+    // Returns a Boolean to check whether a Room exists between two people.
+    console.log("First Person is ", firstPersonID);
+    console.log("Second Person is " , secondPersonID);
+    
+    const firstPersonRef = doc(db, "users", firstPersonID);
+    const secondPersonRef = doc(db, "users", secondPersonID);
+
+    const roomsRef = collection(db, "rooms");
+
+    const q = query(
+        roomsRef,
+        where("person1", "==", firstPersonRef ),
+        where("person2", "==", secondPersonRef)
+    );
+
+    const roomSnapshot = await getDocs(q);
+
+    if (roomSnapshot.empty) {
+        console.log("No room found for these Users");
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+export const retrieveRoom = async(firstPersonID, secondPersonID) => {
+    const firstPersonRef = doc(db, "users", firstPersonID);
+    const secondPersonRef = doc(db, "users", secondPersonID);
+
+    const roomsRef = collection(db, "rooms");
+
+    const q = query(
+        roomsRef,
+        where("person1", "==", firstPersonRef),
+        where("person2", "==", secondPersonRef)
+    );
+
+    const roomSnapshot = await getDocs(q);
+
+    if (roomSnapshot.empty) {
+        console.log("No room found for these Users");
+        return null;
+    }
+
+    const roomDoc = roomSnapshot.docs[0];
+    const roomData = {
+        id: roomDoc.id,
+        ...roomDoc.data()
+    };
+
+    const firstPersonSnapshot = await getDoc(roomData.person1);
+    const secondPersonSnapshot = await getDoc(roomData.person2);
+
+    if (!firstPersonSnapshot.exists() || !secondPersonSnapshot.exists()) {
+        console.log("One or both users do not exist.");
+        return null;
+    }
+
+    return {
+        room: roomData,
+        person1: firstPersonSnapshot.data(),
+        person2: secondPersonSnapshot.data(),
+    };
+}
 
 

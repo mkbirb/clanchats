@@ -1,17 +1,31 @@
 import React, { useEffect, useState } from "react";
-import {searchUsers} from "../components/firebaseConfig.js";
+import {createClan, getSpecificUsersIDs, searchUsers} from "../components/firebaseConfig.js";
 import Modal from 'react-modal';
 import useImagePreview from "../customHooks/useImagePreview";
+import { uploadImageToImgBB } from '../utils/imageUpload';
+import {navigateTo} from '../components/Routes';
+import {useRouter} from "next/router";
+import { useCurrentUser } from "../context/CurrentUserContext.js";
 
 const dashboard = () => {
     const [displayCreateClanModal, setDisplayCreateClanModal] = useState(false);
     const { imageFile, previewURL, handleImageChange } = useImagePreview();
+
+    // Create the States for the Clan Creation
+    const [clanName, setClanName] = useState('');
+    const [clanLogo, setClanLogo] = useState('');
+    const [clanDescription, setClanDescription] = useState('');
 
     // Create States that would help with the adding of the people to a Clan
     const [addPeopleInput, setAddPeopleInput] = useState('');
     const [usernameSuggestions, setUsernameSuggestions] = useState([]);
     const [clanMemberList, setClanMemberList] = useState([]);
     const [showUsernameDropdown, setShowUsernameDropdown] = useState(false);
+
+    // For the Navigation to success page
+    const router = useRouter();
+
+    const { user } = useCurrentUser(); 
 
     // Get the searching of Usernames when User begins to type to add individuals to the clan
     const fetchUsernames = async () => {
@@ -34,13 +48,46 @@ const dashboard = () => {
         );
     }
 
+    const handleSubmit = async(e) => {
+        // Prevent refresh so we keep all the States still
+        e.preventDefault();
+
+        let imageUrl = null; 
+
+        if (clanLogo) {
+            // Upload the image and get the URL
+            imageUrl = await uploadImageToImgBB(clanLogo); 
+        }
+
+        try {
+            
+            // Translate the Usernames choosen into User IDs that would then be stored in the Database
+            const listOfClanMembers = await getSpecificUsersIDs(clanMemberList);
+            const clanCreatedID = await createClan(clanName, imageUrl, listOfClanMembers, clanDescription);
+
+            if (clanCreatedID) {
+                alert("Account created successfully!");
+
+                // Navigate to Chat Page when Clan Creation sucessful
+                navigateTo(router, "CHAT", clanCreatedID)
+            }
+            else {
+                console.log("Clan creation failed");
+            } 
+        }
+        catch(error) {
+            alert("Failed Clan Creation: ", error.message);
+            console.log("Failed Clan Creation ", error);
+        }
+    }
+
     useEffect(() => {
         fetchUsernames();
     }, [addPeopleInput])
 
     return (
         <>
-            <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome!!</h1>
+            <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome {user.username}!!</h1>
             <button onClick={() => {setDisplayCreateClanModal(true)}}> Create Clan </button>
 
             <Modal 
@@ -48,15 +95,17 @@ const dashboard = () => {
                 onRequestClose={() => {setDisplayCreateClanModal(false)}}
             >
                 <p> Create your Clan!! </p>
-                <form>
+                <form onSubmit={handleSubmit}>
                     <label htmlFor="clanName"> What is your Clan Name?</label>
-                    <input id="clanName" type="text" placeholder="Insert Clan Name"/>
+                    <input id="clanName" type="text" placeholder="Insert Clan Name" onChange={(e) => setClanName(e.target.value) }/>
                     <label htmlFor="clanPicture"> What is your Clan Logo? </label>
-                    <input id="clanPicture" type="file" onChange={handleImageChange} accept="image/*" />
+                    <input id="clanPicture" type="file" onChange={(e) => {
+                        handleImageChange(e);
+                        setClanLogo(e.target.files[0]);
+                    }} accept="image/*" />
                     { // Previews the Image that has been uploaded by the User
                         previewURL && (
                             <>
-                                <p> You say </p>
                                 <img src={previewURL} alt="Preview" style={{ width: '200px', height: 'auto' }} />
                             </>
                         )
@@ -100,7 +149,7 @@ const dashboard = () => {
                         )
                     }
                     <label htmlFor="clanDescription"> Define your clan </label>
-                    <input id="clanDescription" type="text" placeholder="Give description of your Clan"></input>
+                    <input id="clanDescription" type="text" placeholder="Give description of your Clan" onChange={(e) => setClanDescription(e.target.value)}></input>
                     <button> Build!! </button>
                 </form>
                 <button onClick={() => {setDisplayCreateClanModal(false)}}> Cancel </button>

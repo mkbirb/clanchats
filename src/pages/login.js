@@ -23,7 +23,7 @@ const login = () => {
                 alert("Login successful!");
 
                 // Navigate to Login Page, when Sign Up Sucessful
-                navigateTo(router, "CHAT");
+                navigateTo(router, "DASHBOARD");
                 
                 changeUser(user);
             }
