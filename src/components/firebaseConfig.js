@@ -1,7 +1,8 @@
 import { db, auth} from '../firebase';
 import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, deleteField } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, getAuth, signInWithPopup, GoogleAuthProvider} from "firebase/auth";
 import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
+import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
 
 export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null, reactions = null) => {
     if ((text.length == 0) && (imageUrl == null)){
@@ -109,7 +110,7 @@ export const editMessage = async (messageId, newText, roomID) => {
     }
 }
 
-export const createUser = async (email, username, accountName, password) => {
+export const createUser = async (email, username, accountName, password, profilePicture = null) => {
     try {
 
         if (!email || !username || !accountName || !password) {
@@ -151,6 +152,9 @@ export const createUser = async (email, username, accountName, password) => {
             email: email,
             username: username,
             name: accountName,
+            profilePicture: profilePicture,
+            onlineStatus: null,
+            wordStatus: null,
             createdAt: new Date(),
         });
 
@@ -161,6 +165,84 @@ export const createUser = async (email, username, accountName, password) => {
         console.error("Signup error:", error.message);
         return false;
       }
+}
+
+export const signInWithGoogle = async () => {
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        await saveGoogleUserToFirestore(user);
+
+        return user;
+    }
+    catch(error) {
+        console.log("Signup with Google Error: ", error.message);
+        return false;
+    }
+}
+
+export const saveGoogleUserToFirestore = async (user) => {
+    try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if(!userSnap.exists()) {
+            if (!userSnap.exists()) {
+                await setDoc(userRef, {
+                    email: user.email,
+                    username: user.displayName,
+                    name: user.displayName,
+                    profilePicture: user.photoURL || null,
+                    onlineStatus: null,
+                    wordStatus: null,
+                    createdAt: new Date(),
+                });
+
+                console.log("New Google user added to Firestore");
+                return true;
+            } 
+            else {
+                console.log("Google user already exists in Firestore");
+                return false;
+            }
+        }
+    }
+    catch (error) {
+        console.error("Failed to save Google user to Firestore:", error.message);
+        return false;
+    }
+}
+
+export const retrieveGoogleAccountUser = async (email) => {
+    try {
+        const userRef = collection(db, "users");
+        const emailQuery = query(userRef, where("email", "==", email));
+
+        const emailQuerySnapshot = await getDocs(emailQuery);
+
+        if (emailQuerySnapshot.empty) {
+            // Email does not exist in Firestore, notify user or return error
+            alert("Google Account not found");
+            return null;
+        }
+
+        const userDoc = emailQuerySnapshot.docs[0];
+        const userData = {
+            id: userDoc.id,
+            ...userDoc.data()
+        };
+
+        console.log("Retrieved Google Account user with ", userData);
+
+        return userData;
+    }
+    catch (error) {
+        console.error("Retrieve Google Account error: ", error.message);
+    }
 }
 
 export const retrieveUser = async (email, password) => {
