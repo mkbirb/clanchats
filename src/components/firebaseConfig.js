@@ -1,5 +1,5 @@
 import { db, auth} from '../firebase';
-import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, deleteField } from "firebase/firestore";
+import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, arrayRemove, arrayUnion } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, getAuth, signInWithPopup, GoogleAuthProvider} from "firebase/auth";
 import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
 import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
@@ -364,14 +364,18 @@ export const addReaction = async (messageId, userId, emoji, roomID) => {
 
     const data = messageSnapshot.data();
     const userReactions = data.userReactions || {};
+    const existingReactions = userReactions[userId] || [];
 
-    if (userReactions[userId] === emoji) {
+    // Array is Array double confirms that Existing Reactions is an Array
+    const hasReacted = Array.isArray(existingReactions) ? existingReactions.includes(emoji) : existingReactions === emoji;
+
+    if (hasReacted) {
         console.log("User already reacted with this Emoji");
 
         // The Reaction is removed, if the Reaction is selected again
         await updateDoc(messageRef, {
             [`reactions.${emoji}`]: increment(-1),
-            [`userReactions.${userId}`]: deleteField(),
+            [`userReactions.${userId}`]: arrayRemove(emoji),
 
         })
         return;
@@ -380,7 +384,7 @@ export const addReaction = async (messageId, userId, emoji, roomID) => {
         // Track what Reactions are done by the User and increment the Reaction selected
         await updateDoc(messageRef, {
             [`reactions.${emoji}`]: increment(1),
-            [`userReactions.${userId}`]: emoji
+            [`userReactions.${userId}`]: arrayUnion(emoji),
         })
     }
 }
@@ -408,12 +412,27 @@ export const listenToReactions = (messages, onUpdate, roomID) => {
     };
   };
 
+export const getUserReactionsFromMessage = async (messageId, roomID, userId) => {
+    const messageRef = doc(db, "rooms", roomID, "messages", messageId);
+    const snap = await getDoc(messageRef);
+
+     if (!snap.exists()) {
+        console.log("No Messages exist for getting User Reactions from Message");
+        return [];
+     }
+
+    const userReactions = snap.get(`userReactions.${userId}`);
+    return Array.isArray(userReactions) ? userReactions : [userReactions];
+}
+
 export const logout = async () => {
     try {
         await signOut(auth);
+        return true;
     }
     catch(error) {
         console.error("Logout error: ", error.message);
+        return false;
     }
 };
 

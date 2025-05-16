@@ -7,6 +7,7 @@ import {navigateTo} from '../components/Routes';
 import {useRouter} from "next/router";
 import { useCurrentUser } from "../context/CurrentUserContext.js";
 import DisplayMyClans from "../components/DisplayMyClans.js";
+import Logout from "../components/Logout.js";
 
 const dashboard = () => {
     const [displayCreateClanModal, setDisplayCreateClanModal] = useState(false);
@@ -159,6 +160,7 @@ const dashboard = () => {
                 <button onClick={() => {setDisplayCreateClanModal(false)}}> Cancel </button>
             </Modal>
             <DisplayMyClans />
+            <Logout />
         </>
     )
 }

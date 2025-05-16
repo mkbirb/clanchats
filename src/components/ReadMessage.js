@@ -6,6 +6,7 @@ import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 import RepliedMessage from "./RepliedMessage";
 import ReactionPicker from "./ReactionPicker.js";
 import ViewImage from "./ViewImage.js";
+import ReactionsDisplay from "./ReactionsDisplay.js";
 
 
 const ReadMessage = () => {
@@ -23,6 +24,10 @@ const ReadMessage = () => {
     const [reactions, setReactions] = useState({});
     // Displays the Reaction Pickers for the specific Message
     const [showReactionPicker, setShowReactionPicker] = useState(null);
+
+    // Used, so the Reactions are able to update to show that User has reacted with that emoji that would be passed 
+    // To the Reactions Display Component
+    const [refreshReactions, setRefreshReactions] = useState(false);
 
     useEffect(() => {
         console.log("Room ID:", roomID);
@@ -91,6 +96,7 @@ const ReadMessage = () => {
     const handleReaction = async (messageId, emoji) => {
         try {
           await addReaction(messageId, userID, emoji, roomID);
+          setRefreshReactions(prev => !prev);
         }
         catch(error) {
           console.log("Reaction had Failed ", error);
@@ -170,14 +176,14 @@ const ReadMessage = () => {
                   />
                 )
               }
-              <div style={{ marginTop: '0.5rem' }}>
-                { // Display the Reaction Emoji with its corresponding Reaction Count
-                  Object.entries(reactions[message.id] || {}).map(([emoji, count]) => (
-                  <span key={emoji}>
-                    {emoji} {count}
-                  </span>
-                ))}
-              </div>
+              <ReactionsDisplay
+                key={message.id}
+                messageId={message.id}
+                reactions={reactions[message.id] || {}}
+                roomID={roomID}
+                userID={userID}
+                refreshTrigger={refreshReactions}
+              />
             </li>
           ))}
         </>
