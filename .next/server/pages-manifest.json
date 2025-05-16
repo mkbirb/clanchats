@@ -2,9 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/chat/[clan]": "pages/chat/[clan].js",
-  "/login": "pages/login.js",
   "/dashboard": "pages/dashboard.js",
-  "/chat": "pages/chat.js",
-  "/signUp": "pages/signUp.js"
+  "/signUp": "pages/signUp.js",
+  "/chat/[clan]": "pages/chat/[clan].js",
+  "/login": "pages/login.js"
 }

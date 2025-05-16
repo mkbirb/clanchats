@@ -33,6 +33,7 @@ const ChatList = ({clanData}) => {
         // Check if Room exists
         const roomExists = await checkRoom(userID, otherUserID);
 
+        console.log("Room Exists is ", roomExists);
         if(!roomExists) {
             // Create the Room
             await createRoom(userID, otherUserID);
@@ -42,7 +43,7 @@ const ChatList = ({clanData}) => {
         const roomData = await retrieveRoom(userID, otherUserID);
 
         console.log("Room Data ", roomData);
-        console.log("Room Dat ID ", roomData.room.id);
+        console.log("Room Data ID ", roomData.room.id);
 
         // Change the RoomID
         changeRoomID(roomData.room.id);

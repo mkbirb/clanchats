@@ -497,15 +497,29 @@ export const checkRoom = async(firstPersonID, secondPersonID) => {
 
     const roomsRef = collection(db, "rooms");
 
-    const q = query(
+    // Left is Person 1 first and then Right is Person 2
+    const leftRight = query(
         roomsRef,
         where("person1", "==", firstPersonRef ),
         where("person2", "==", secondPersonRef)
     );
 
-    const roomSnapshot = await getDocs(q);
+    // Right Left, where Second Person is first Person 1
+    const rightLeft = query (
+        roomsRef,
+        where("person1", "==", secondPersonRef),
+        where("person2", "==", firstPersonRef)
+    )
 
-    if (roomSnapshot.empty) {
+    const [leftRightsnapshot, rightLeftsnapshot] = await Promise.all([
+        getDocs(leftRight),
+        getDocs(rightLeft),
+    ]);
+
+    const roomExists = !leftRightsnapshot.empty || !rightLeftsnapshot.empty;
+
+
+    if (!roomExists) {
         console.log("No room found for these Users");
         return false;
     }
@@ -520,15 +534,26 @@ export const retrieveRoom = async(firstPersonID, secondPersonID) => {
 
     const roomsRef = collection(db, "rooms");
 
-    const q = query(
+    const leftRight = query(
         roomsRef,
         where("person1", "==", firstPersonRef),
         where("person2", "==", secondPersonRef)
     );
 
-    const roomSnapshot = await getDocs(q);
+    const rightLeft = query(
+        roomsRef,
+        where("person1", "==", secondPersonRef),
+        where("person2", "==", firstPersonRef)
+    );
 
-    if (roomSnapshot.empty) {
+    const [leftRightSnapshot, rightLeftsnapshot] = await Promise.all([
+        getDocs(leftRight),
+        getDocs(rightLeft),
+    ]);
+
+    const roomSnapshot = !leftRightSnapshot.empty ? leftRightSnapshot : !rightLeftsnapshot.empty ? rightLeftsnapshot : null;
+
+    if (!roomSnapshot) {
         console.log("No room found for these Users");
         return null;
     }

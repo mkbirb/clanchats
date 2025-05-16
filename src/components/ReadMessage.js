@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions} from "./firebaseConfig.js";
+import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
@@ -12,6 +12,7 @@ const ReadMessage = () => {
     const [messages, setMessages] = useState([]);
     const [editText, setEditText] = useState('');
     const [editingMessageId, setEditingMessageId] = useState(null);
+    const [messageUsername, setMessageUsername] = useState({});
     const { userID, roomID } = useCurrentUser(); 
 
     const {replyTo, setReplyTo} = useContext(ReplyContext);
@@ -47,6 +48,37 @@ const ReadMessage = () => {
     
       return () => unsubscribe();
     }, [messages]);
+
+    useEffect(() => {
+      const fetchUserInformation = async () => {
+        // Get the Unique IDs within the Messages
+        const ids = [...new Set(messages.map(msg => msg.userID))];
+        const newUsernames = { ...messageUsername };
+
+        // Promise All, does runs asynchronously
+        await Promise.all(ids.map(async(id) => {
+          if(!messageUsername[id]) {
+            // If the Username does not exist in the list gathered, get it
+            const userInformation = await getUserByID(id);
+            
+            if(userInformation.username) {
+              // Add the Messages Username List
+              newUsernames[id] = userInformation.username;
+            }
+            else {
+              newUsernames[id] = "Unknown";
+              console.log("Cannot find the Username for the Message");
+            }
+          }
+        }))
+
+        setMessageUsername(newUsernames);
+      }
+
+      if(messages.length > 0) {
+        fetchUserInformation();
+      }
+    }, [messages])
 
     const handleDelete = (messageId) => {
       deleteMessage(messageId, roomID);
@@ -94,6 +126,7 @@ const ReadMessage = () => {
           {messages.map((message, index) => (
             <li key={index}>  
               <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
+              <p> {messageUsername[message.userID]} </p>
               <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
               <button onClick={() => setReplyTo(message.id)}> Reply </button>
               <button onClick={() => handleDelete(message.id)}> Delete </button>
