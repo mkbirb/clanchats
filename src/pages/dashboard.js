@@ -27,7 +27,7 @@ const dashboard = () => {
     // For the Navigation to success page
     const router = useRouter();
 
-    const { user, userID } = useCurrentUser(); 
+    const { user, userID, loading } = useCurrentUser(); 
 
     // Get the searching of Usernames when User begins to type to add individuals to the clan
     const fetchUsernames = async () => {
@@ -90,9 +90,15 @@ const dashboard = () => {
         fetchUsernames();
     }, [addPeopleInput])
 
+    if (loading) return <p>Loading...</p>;
+
     return (
         <>
+            {user && user.username ? (
             <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome {user.username}!!</h1>
+            ) : (
+            <p className="text-gray-500">Loading user...</p>
+            )}
             <button onClick={() => {setDisplayCreateClanModal(true)}}> Create Clan </button>
 
             <Modal 

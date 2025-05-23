@@ -318,8 +318,11 @@ export const getUserByID = async(userID) => {
     const userSnapshot = await getDoc(userRef);
 
     if (userSnapshot.exists()) {
-        return userSnapshot.data();
-    }
+        return {
+            id: userSnapshot.id,      
+            ...userSnapshot.data(),  
+        };
+    } 
     else {
         console.warn("No user found for the ID ", userID);
         return null;
@@ -617,5 +620,6 @@ export const getClansBasedOnUser = async(userID) => {
         return [];
     }
 }
+
 
 

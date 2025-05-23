@@ -28,7 +28,7 @@ const login = () => {
                 changeUser(user);
             }
         }
-        catch {
+        catch (error) {
             alert("Could not Login ", error.message);
         }
     }

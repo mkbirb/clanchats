@@ -6,27 +6,37 @@ import { useRouter } from "next/router";
 
 
 const DisplayMyClans = () => {
-    const { userID } = useCurrentUser(); 
+    const { userID, loading } = useCurrentUser(); 
     const [myClanList, setMyClanList] = useState([]);
+    const [clansLoading, setClansLoading] = useState(true);
 
     const router = useRouter();
 
     useEffect(() => {
+        console.log("userID:", userID, "loading:", loading);
+    }, [userID, loading]);
+
+
+    useEffect(() => {
         const fetchClans = async () => {
+            if (!userID) return;
+            setClansLoading(true);
             const userClans = await getClansBasedOnUser(userID);
             setMyClanList(userClans);
-        }
+            setClansLoading(false);
+        };
 
-        // If there is a User ID, then we would Fetch the Clans
-        if (userID) {
+        if (!loading && userID) {
             fetchClans();
         }
-    }, [userID])
+    }, [userID]);
 
     const handleGoToClan = (clanID) => {
         // Go to the Clan Chat Page
         navigateTo(router, "CHAT", clanID)
     }
+
+    if (loading || clansLoading) return <p>Loading clans...</p>;
 
     return(
         <>

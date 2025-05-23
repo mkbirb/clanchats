@@ -61,7 +61,11 @@ const chat = () => {
                 ): (
                 <p> Loading... </p>
             )}
-            <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome {user.username}!</h1>
+            {user && user.username ? (
+            <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome {user.username}!!</h1>
+            ) : (
+            <p className="text-gray-500">Loading user...</p>
+            )}
         </>
     )
 }

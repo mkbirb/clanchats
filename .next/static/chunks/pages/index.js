@@ -18,16 +18,6 @@ eval(__webpack_require__.ts("\n    (window.__NEXT_P = window.__NEXT_P || []).pus
 
 /***/ }),
 
-/***/ "(pages-dir-browser)/./node_modules/next/router.js":
-/*!*************************************!*\
-  !*** ./node_modules/next/router.js ***!
-  \*************************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval(__webpack_require__.ts("module.exports = __webpack_require__(/*! ./dist/client/router */ \"(pages-dir-browser)/./node_modules/next/dist/client/router.js\")\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHBhZ2VzLWRpci1icm93c2VyKS8uL25vZGVfbW9kdWxlcy9uZXh0L3JvdXRlci5qcyIsIm1hcHBpbmdzIjoiQUFBQSxpSUFBZ0QiLCJzb3VyY2VzIjpbIkM6XFxVc2Vyc1xcdXNlclxcY2xhbnNjaGF0XFxub2RlX21vZHVsZXNcXG5leHRcXHJvdXRlci5qcyJdLCJzb3VyY2VzQ29udGVudCI6WyJtb2R1bGUuZXhwb3J0cyA9IHJlcXVpcmUoJy4vZGlzdC9jbGllbnQvcm91dGVyJylcbiJdLCJuYW1lcyI6W10sImlnbm9yZUxpc3QiOlswXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///(pages-dir-browser)/./node_modules/next/router.js\n"));
-
-/***/ }),
-
 /***/ "(pages-dir-browser)/./src/components/Routes.js":
 /*!**********************************!*\
   !*** ./src/components/Routes.js ***!
