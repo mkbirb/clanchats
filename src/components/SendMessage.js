@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import {createMessage} from "./firebaseConfig.js";
+import {createMessage, incrementRoomExperience} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { uploadImageToImgBB } from '../utils/imageUpload';
 import { ReplyContext } from "../context/ReplyContext.js";
@@ -12,6 +12,8 @@ const SendMessage = () => {
     const [image, setImage] = useState(null);
     const {replyTo, setReplyTo} = useContext(ReplyContext);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+    const expGivenPerMessage = 5;
 
     const [originalMessage, setOriginalMessage] = useFetchOriginalMessage(replyTo);
 
@@ -32,6 +34,9 @@ const SendMessage = () => {
         }
 
         await createMessage(message, userID, roomID, seen, imageUrl, replyTo); 
+
+        // Increase the Experience for the Room
+        await incrementRoomExperience(roomID, expGivenPerMessage);
         
         // Reset the Message
         setMessage("");

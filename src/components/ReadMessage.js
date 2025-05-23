@@ -7,6 +7,7 @@ import RepliedMessage from "./RepliedMessage";
 import ReactionPicker from "./ReactionPicker.js";
 import ViewImage from "./ViewImage.js";
 import ReactionsDisplay from "./ReactionsDisplay.js";
+import DisplayRoomLevel from "./DisplayRoomLevel.js";
 
 
 const ReadMessage = () => {
@@ -129,6 +130,7 @@ const ReadMessage = () => {
         <>
           <p>Messages {userID}</p>
           <p>Room ID {roomID}</p>
+          <DisplayRoomLevel />
           {messages.map((message, index) => (
             <li key={index}>  
               <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>

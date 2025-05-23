@@ -3,6 +3,7 @@ import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, getAuth, signInWithPopup, GoogleAuthProvider} from "firebase/auth";
 import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
 import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
+import { levelDefinition, maxLevel } from './definitions/LevelDefinitions';
 
 export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null, reactions = null) => {
     if ((text.length == 0) && (imageUrl == null)){
@@ -601,6 +602,31 @@ export const retrieveRoom = async(firstPersonID, secondPersonID) => {
     };
 }
 
+export const retrieveRoomBasedOnID = async(roomID) => {
+
+    try {
+        if (!roomID) {
+            console.log("Room ID was not given");
+        }
+
+        const roomRef = doc(db, "rooms", roomID);
+
+        const snap = await getDoc(roomRef);
+
+        if (!snap.exists()) {
+            console.log("No room found with the given ID");
+            return null;
+        }
+
+        return { id: snap.id, ...snap.data() };
+    }
+    catch (error) {
+        console.log("Cannot find the Room based on Room ID", roomID);
+
+        return null;
+    }
+}
+
 export const getClansBasedOnUser = async(userID) => {
     try {
         const clansRef = collection(db, "clan");
@@ -620,6 +646,58 @@ export const getClansBasedOnUser = async(userID) => {
         return [];
     }
 }
+
+export const incrementRoomExperience = async (roomID, amount = 0) => {
+
+    if(!roomID) {
+        console.log("No Room ID given for Incrementing Room Experience");
+        return;
+    }
+
+    try {
+        const roomRef = doc(db, "rooms", roomID);
+
+        const roomSnapshot = await getDoc(roomRef);
+
+        const roomData = roomSnapshot.data();
+
+        const currentLevel = roomData.level.level;
+        const currentExperience = roomData.level.experience;
+
+        let newExperience = currentExperience + amount;
+        let newLevel = currentLevel;
+
+        // Only Level up, when you have not reached maxed level
+        while((newLevel < maxLevel) && (newExperience >= levelDefinition[newLevel])) {
+            newExperience -= levelDefinition[newLevel];
+            newLevel++;
+        }
+
+        // Cap the Experience to the Max
+        if (newLevel === maxLevel && newExperience > levelDefinition[maxLevel]) {
+            newExperience = levelDefinition[maxLevel];
+        }
+
+        await updateDoc(roomRef, {
+            "level.level": newLevel,
+            "level.experience": newExperience,
+        })
+    }
+    catch (error) {
+        console.error("Error incrementing experience for Room: ", error);
+    }
+}
+
+// Allows for active listening to the Room Data
+export const subscribeToRoomData = (roomID, callback) => {
+    const roomRef = doc(db, "rooms", roomID);
+
+    return onSnapshot(roomRef, (snapshot) => {
+        if (snapshot.exists()) {
+        callback(snapshot.data());
+        }
+    });
+};
 
 
 
