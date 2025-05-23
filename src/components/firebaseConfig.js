@@ -699,5 +699,44 @@ export const subscribeToRoomData = (roomID, callback) => {
     });
 };
 
+export const updateOnlineStatus = async (userID, onlineStatus) => {
+    const userRef = doc(db, "users", userID);
+
+    try {
+        await updateDoc(userRef, {
+            onlineStatus: onlineStatus,
+        })
+    }
+    catch (error) {
+        console.log("Cannot update Online Status due to ", error);
+    }
+}
+
+export const updateWordStatus = async (userID, wordStatus) => {
+   const userRef = doc(db, "users", userID);
+
+    try {
+        await updateDoc(userRef, {
+            wordStatus: wordStatus,
+        })
+    }
+    catch (error) {
+        console.log("Cannot update Word Status due to ", error);
+    }
+}
+
+export const updateProfilePicture = async (userID, profilePicture) => {
+   const userRef = doc(db, "users", userID);
+
+    try {
+        await updateDoc(userRef, {
+            profilePicture: profilePicture,
+        })
+    }
+    catch (error) {
+        console.log("Cannot update Profile Picture due to ", error);
+    }
+}
+
 
 

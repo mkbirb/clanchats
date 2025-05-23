@@ -24,10 +24,23 @@ const useImagePreview = () => {
         }
     };
 
+    const resetPreview = () => {
+        setImageFile(null);
+        setPreviewURL(null);
+    };
+
+    // Allows the setting of the Image Preview through URL
+    const setPreviewManually = (url) => {
+        setImageFile(null);
+        setPreviewURL(url);
+    };
+
     return {
         imageFile,
         previewURL,
-        handleImageChange
+        setPreviewManually,
+        handleImageChange,
+        resetPreview
     }
 };
 

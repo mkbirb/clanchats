@@ -8,6 +8,7 @@ import {useRouter} from "next/router";
 import { useCurrentUser } from "../context/CurrentUserContext.js";
 import DisplayMyClans from "../components/DisplayMyClans.js";
 import Logout from "../components/Logout.js";
+import DashboardProfile from "../components/DashboardProfile.js";
 
 const dashboard = () => {
     const [displayCreateClanModal, setDisplayCreateClanModal] = useState(false);
@@ -99,6 +100,7 @@ const dashboard = () => {
             ) : (
             <p className="text-gray-500">Loading user...</p>
             )}
+            <DashboardProfile />
             <button onClick={() => {setDisplayCreateClanModal(true)}}> Create Clan </button>
 
             <Modal 
