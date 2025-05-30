@@ -1,5 +1,5 @@
 import { db, auth} from '../firebase';
-import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, arrayRemove, arrayUnion } from "firebase/firestore";
+import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, arrayRemove, arrayUnion, Timestamp } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, getAuth, signInWithPopup, GoogleAuthProvider} from "firebase/auth";
 import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
 import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
@@ -292,11 +292,14 @@ export const retrieveUser = async (email, password) => {
     }
 }
 
-// Get the Specific Users Document based on their Usernames
+// Get the Specific Users Document based on their Usernames. Can also accept single usernames
 export const getSpecificUsersIDs = async (usernames) => {
     const usersIDList = [];
+
+    // Allows acceptance of Single Username or Array of Usernames
+    const names = Array.isArray(usernames) ? usernames : [usernames];
     
-    for (const name of usernames) {
+    for (const name of names) {
         const q = query(collection(db, "users"), where("username", "==", name));
         const snapshot = await getDocs(q);
 
@@ -736,6 +739,54 @@ export const updateProfilePicture = async (userID, profilePicture) => {
     catch (error) {
         console.log("Cannot update Profile Picture due to ", error);
     }
+}
+
+export const searchMessages = async (roomID, {username, startDate, endDate, searchInput}) => {
+    const messagesRef = collection(db, "rooms", roomID, "messages");
+
+    let q = query(messagesRef);
+
+    if (username) {
+        const userIDs = await getSpecificUsersIDs(username); 
+
+        if (userIDs.length > 0) {
+            if (userIDs.length === 1) {
+                q = query(q, where("userID", "==", userIDs[0]));
+            } 
+        } else {
+            // No valid users = no results
+            return [];
+        }
+    }
+
+    if (startDate) {
+        // If start date is given, then query
+        q = query(q, where("createdAt", ">=", Timestamp.fromDate(new Date(startDate))));
+    }
+
+    if (endDate) {
+        // Create date for the end of the day to include all messages on that day
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); 
+        
+        q = query(q, where("createdAt", "<=", Timestamp.fromDate(end)));
+    }
+
+    // We just getting exact messages and input starters
+    if (searchInput && searchInput.trim() !== "") {
+        q = query(q, 
+            where('text', '>=', searchInput), 
+            where('text', '<=', searchInput + '\uf8ff'));
+    }
+
+    const snapshot = await getDocs(q);
+
+    const results = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }))
+
+    return results;
 }
 
 

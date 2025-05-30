@@ -6,6 +6,7 @@ import { useCurrentUser } from "../../context/CurrentUserContext";
 import { useRouter } from 'next/router';
 import { retrieveClan } from "../../components/firebaseConfig";
 import { navigateTo } from "../../components/Routes";
+import SearchMessages from "../../components/SearchMessages";
 
 const chat = () => {
 
@@ -57,6 +58,7 @@ const chat = () => {
                         <ChatList clanData={clanData} />
                         <ReadMessage />
                         <SendMessage/>
+                        <SearchMessages />
                     </>
                 ): (
                 <p> Loading... </p>
