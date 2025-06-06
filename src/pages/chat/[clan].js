@@ -8,10 +8,11 @@ import { retrieveClan } from "../../components/firebaseConfig";
 import { navigateTo } from "../../components/Routes";
 import SearchMessages from "../../components/SearchMessages";
 import ReplyList from "../../components/ReplyList";
+import ClanHome from "../../components/ClanHome";
 
 const chat = () => {
 
-    const { user } = useCurrentUser(); 
+    const { user, roomID, changeRoomID} = useCurrentUser(); 
 
     // Get the Clan Name
     const router = useRouter();
@@ -59,13 +60,25 @@ const chat = () => {
                 // Display once already fetched the Clan Data
                 clanData ? (
                     <>
-                        <button onClick={() =>navigateTo(router, "DASHBOARD") }> To Dashboard </button>
+                        <button onClick={() => {navigateTo(router, "DASHBOARD"), changeRoomID(null) }}> To Dashboard </button>
                         <h1 className="font-mono text-3xl font-bold text-blue-600"> Clan: {clanData.name}!</h1>
                         <ChatList clanData={clanData} />
-                        <ReadMessage />
-                        <SendMessage onReplySent={refreshReplyList}/>
-                        <ReplyList refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
-                        <SearchMessages />
+                        {
+                            // Display the Message Chat, when a User has been selected
+                            roomID ? (
+                                <>
+                                    <ReadMessage />
+                                    <SendMessage onReplySent={refreshReplyList}/>
+                                    <ReplyList refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
+                                    <SearchMessages />
+                                </>
+
+                            ) : (
+                                <>
+                                    <ClanHome clanData={clanData}/>
+                                </>
+                            )
+                        }
                     </>
                 ): (
                 <p> Loading... </p>

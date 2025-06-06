@@ -102,67 +102,75 @@ const ReadMessage = () => {
           <p>Messages {userID}</p>
           <p>Room ID {roomID}</p>
           <DisplayRoomLevel />
-          {messages.map((message, index) => (
-            <li key={index}>  
-              <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
-              <p> {messageUsername[message.userID]} </p>
-              <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
-              <button onClick={() => setReplyTo(message.id)}> Reply </button>
-              <button onClick={() => handleDelete(message.id)}> Delete </button>
-              <button onClick={() =>  {
-                setEditingMessageId(message.id); 
-                setEditText(message.text)}}> Edit </button>
-              <RepliedMessage replyTo={message.replyTo} />
+          {
+            messages.length === 0 ? (
+              <>
+                <p> Looks like this a new Chat, send the first message!</p>
+              </>
+            ): (
+                messages.map((message, index) => (
+                <li key={index}>  
+                  <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
+                  <p> {messageUsername[message.userID]} </p>
+                  <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
+                  <button onClick={() => setReplyTo(message.id)}> Reply </button>
+                  <button onClick={() => handleDelete(message.id)}> Delete </button>
+                  <button onClick={() =>  {
+                    setEditingMessageId(message.id); 
+                    setEditText(message.text)}}> Edit </button>
+                  <RepliedMessage replyTo={message.replyTo} />
 
-              {editingMessageId === message.id ? (
-                <>
-                    <textarea value={editText} onChange={(e) => setEditText(e.target.value) }/>
-                    <button onClick={() => {
-                        handleEdit(message.id);
-                        setEditingMessageId(null);
-                        setEditText(null);
-                      }}> Update </button>
-                    <button onClick={() => {
-                      setEditingMessageId(null); 
-                      setEditText(null);}}> Cancel </button>
-                </>
-              ) : (
-                <div id={`message-${message.id}`}>
-                  <p>{message.text} </p>
-                </div>
-                )}
+                  {editingMessageId === message.id ? (
+                    <>
+                        <textarea value={editText} onChange={(e) => setEditText(e.target.value) }/>
+                        <button onClick={() => {
+                            handleEdit(message.id);
+                            setEditingMessageId(null);
+                            setEditText(null);
+                          }}> Update </button>
+                        <button onClick={() => {
+                          setEditingMessageId(null); 
+                          setEditText(null);}}> Cancel </button>
+                    </>
+                  ) : (
+                    <div id={`message-${message.id}`}>
+                      <p>{message.text} </p>
+                    </div>
+                    )}
 
-              {message.imageURL && (
-                <ViewImage src={message.imageURL} />
-              )}
+                  {message.imageURL && (
+                    <ViewImage src={message.imageURL} />
+                  )}
 
-              <button onClick={
-                // Open the Reaction Picker if null, where if Reaction Picker already set to Message ID and is therefore showing
-                // When React button is clicked again, we set it to Null to hide the Reaction Picker
-                () => setShowReactionPicker(showReactionPicker === message.id ? null: message.id)
-              }>
-                👍
-              </button>
-              {
-                showReactionPicker === message.id && (
-                  // Update the State and then close the Reaction Picker
-                  <ReactionPicker onSelect={(emoji) => {
-                    handleReaction(message.id, emoji);
-                    setShowReactionPicker(null);
-                    }}
+                  <button onClick={
+                    // Open the Reaction Picker if null, where if Reaction Picker already set to Message ID and is therefore showing
+                    // When React button is clicked again, we set it to Null to hide the Reaction Picker
+                    () => setShowReactionPicker(showReactionPicker === message.id ? null: message.id)
+                  }>
+                    👍
+                  </button>
+                  {
+                    showReactionPicker === message.id && (
+                      // Update the State and then close the Reaction Picker
+                      <ReactionPicker onSelect={(emoji) => {
+                        handleReaction(message.id, emoji);
+                        setShowReactionPicker(null);
+                        }}
+                      />
+                    )
+                  }
+                  <ReactionsDisplay
+                    key={message.id}
+                    messageId={message.id}
+                    reactions={reactions[message.id] || {}}
+                    roomID={roomID}
+                    userID={userID}
+                    refreshTrigger={refreshReactions}
                   />
-                )
-              }
-              <ReactionsDisplay
-                key={message.id}
-                messageId={message.id}
-                reactions={reactions[message.id] || {}}
-                roomID={roomID}
-                userID={userID}
-                refreshTrigger={refreshReactions}
-              />
-            </li>
-          ))}
+                </li>
+              ))
+            )
+          }
         </>
       );
     

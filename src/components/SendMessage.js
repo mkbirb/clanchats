@@ -1,10 +1,11 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef} from "react";
 import {createMessage, incrementRoomExperience} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { uploadImageToImgBB } from '../utils/imageUpload';
 import { ReplyContext } from "../context/ReplyContext.js";
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 import EmojiPicker from './EmojiPicker.js';
+import { jumpToMessage } from "../utils/jumpToMessage.js";
 
 const SendMessage = ({onReplySent}) => {
     const [message, setMessage] = useState("");
@@ -16,6 +17,10 @@ const SendMessage = ({onReplySent}) => {
     const expGivenPerMessage = 5;
 
     const [originalMessage, setOriginalMessage] = useFetchOriginalMessage(replyTo);
+
+    // When the User sends a message, page would scroll down to the bottom of Chat Messages
+    const bottomRef = useRef(null);     
+
 
     const addEmoji = (emoji) => {
         setMessage(prev => prev + emoji.native);
@@ -39,6 +44,9 @@ const SendMessage = ({onReplySent}) => {
         }
 
         await createMessage(message, userID, roomID, seen, imageUrl, replyTo); 
+
+        // Scroll to bottom of Messages
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
 
         // Increase the Experience for the Room
         await incrementRoomExperience(roomID, expGivenPerMessage);
@@ -81,7 +89,7 @@ const SendMessage = ({onReplySent}) => {
                 >
                 </input>
             </form>
-
+            <div ref={bottomRef} />
         </>
     );
 }

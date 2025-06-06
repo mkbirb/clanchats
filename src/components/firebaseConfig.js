@@ -50,6 +50,7 @@ export const retrieveMessages = (setMessages, roomID) => {
 
         if (snapshot.empty) {
             console.log("No messages found for room", roomID);
+            setMessages([]);
         }
         else {
             const messageData = snapshot.docs.map((doc) => ({
