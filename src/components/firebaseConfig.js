@@ -789,5 +789,61 @@ export const searchMessages = async (roomID, {username, startDate, endDate, sear
     return results;
 }
 
+// Keeps track of which Replies that the User has choosen to not reply to and remove from the Reply List
+export const addRemovedReplyListMessageID = async (roomID, userID, messageID) => {
+    const docRef = doc(db, "rooms", roomID, "removedReplyMessageIDs", userID);
+
+    await updateDoc(docRef, {
+        // Add the Messsage without duplicates
+        removedIDs: arrayUnion(messageID)
+    }).catch(async (error) => {
+        if (error.code === 'not-found') {
+            // If document doesn't exist, create it
+            await setDoc(docRef, { removedIDs: [messageID] });
+        } 
+        else {
+            console.log("Cannot add the Message to remove from the Reply List ", error);
+        }
+    });
+}
+
+export const getUnRepliedMessages = async (roomID, currentUserID) => {
+    const messageRef = collection(db, "rooms", roomID, "messages");
+
+    // Get the Last Messages from 14 Days
+    const q = query(messageRef, where("createdAt", ">=", Timestamp.fromDate(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000))));
+
+    const messageSnapshot = await getDocs(q);
+
+    // Also include the Document IDs of each of the Messages retrieved
+    const allMessages = messageSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+    // Get removed message IDs for the current user
+    const removedDocRef = doc(db, "rooms", roomID, "removedReplyMessageIDs", currentUserID);
+    const removedDocSnap = await getDoc(removedDocRef);
+    const removedIDs = removedDocSnap.exists() ? removedDocSnap.data().removedIDs || [] : [];
+
+    // Get all of the Original Messages that is not from the Current Users ID
+    const originalMessageFromOther = allMessages.filter(message => message.userID != currentUserID && !message.replyTo);
+
+    const currentUserReplies = allMessages.filter(message => message.userID === currentUserID && message.replyTo);
+
+    // Filter out the repeated replies, different Messages might have by using Set
+    const repliedToIDs = new Set(currentUserReplies.map(msg => msg.replyTo));
+
+    // Filter Messages based on what Users has not replied too
+
+    const unrepliedMessages = originalMessageFromOther.filter(
+        msg => !repliedToIDs.has(msg.id) && !removedIDs.includes(msg.id)
+    )
+
+    // Only retrieve unreplied Messages that are longer than 3 Words
+    const longUnrepliedMessages = unrepliedMessages.filter(
+        msg => msg.text && msg.text.trim().split(/\s+/).length >= 3
+    );
+
+    return longUnrepliedMessages;
+}
+
 
 

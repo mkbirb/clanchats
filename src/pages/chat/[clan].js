@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 import { retrieveClan } from "../../components/firebaseConfig";
 import { navigateTo } from "../../components/Routes";
 import SearchMessages from "../../components/SearchMessages";
+import ReplyList from "../../components/ReplyList";
 
 const chat = () => {
 
@@ -17,6 +18,11 @@ const chat = () => {
 
     const [clanID, setClanID] = useState(null);
     const [clanData, setClanData] = useState(null);
+
+    // For the Reply List, so that the Reply List updates when user has replied to a Message from this List
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const refreshReplyList = () => setRefreshTrigger(prev => prev + 1);
 
     // Gets the Clan ID from the URL Parameter
     useEffect(() => {
@@ -57,7 +63,8 @@ const chat = () => {
                         <h1 className="font-mono text-3xl font-bold text-blue-600"> Clan: {clanData.name}!</h1>
                         <ChatList clanData={clanData} />
                         <ReadMessage />
-                        <SendMessage/>
+                        <SendMessage onReplySent={refreshReplyList}/>
+                        <ReplyList refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
                         <SearchMessages />
                     </>
                 ): (

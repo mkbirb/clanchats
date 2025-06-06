@@ -6,7 +6,7 @@ import { ReplyContext } from "../context/ReplyContext.js";
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 import EmojiPicker from './EmojiPicker.js';
 
-const SendMessage = () => {
+const SendMessage = ({onReplySent}) => {
     const [message, setMessage] = useState("");
     const { userID, roomID, changeRoomID } = useCurrentUser();
     const [image, setImage] = useState(null);
@@ -31,6 +31,11 @@ const SendMessage = () => {
         if (image) {
           // Upload the image and get the URL
           imageUrl = await uploadImageToImgBB(image); 
+        }
+
+        // Allows the Reply List to be updated
+        if (onReplySent && originalMessage) {
+            onReplySent();
         }
 
         await createMessage(message, userID, roomID, seen, imageUrl, replyTo); 
