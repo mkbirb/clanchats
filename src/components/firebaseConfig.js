@@ -25,7 +25,8 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
             replyTo: replyTo,
             reactions: {},
             // Stores which Emoji has been reacted to by which User
-            userReactions: {}
+            userReactions: {},
+            reactionsOrder: [],
         });
         console.log("Sent Message");
     }
@@ -373,6 +374,8 @@ export const addReaction = async (messageId, userId, emoji, roomID) => {
     const data = messageSnapshot.data();
     const userReactions = data.userReactions || {};
     const existingReactions = userReactions[userId] || [];
+    // Helps ensure that the Emojis dont change order when a new Reaction is added
+    const reactionsOrder = data.reactionsOrder || [];
 
     // Array is Array double confirms that Existing Reactions is an Array
     const hasReacted = Array.isArray(existingReactions) ? existingReactions.includes(emoji) : existingReactions === emoji;
@@ -381,20 +384,46 @@ export const addReaction = async (messageId, userId, emoji, roomID) => {
         console.log("User already reacted with this Emoji");
 
         // The Reaction is removed, if the Reaction is selected again
-        await updateDoc(messageRef, {
-            [`reactions.${emoji}`]: increment(-1),
-            [`userReactions.${userId}`]: arrayRemove(emoji),
-
-        })
-        return;
+        removeReaction(messageId, userId, emoji, roomID);
     }
     else {
         // Track what Reactions are done by the User and increment the Reaction selected
-        await updateDoc(messageRef, {
+        const updates = {
             [`reactions.${emoji}`]: increment(1),
             [`userReactions.${userId}`]: arrayUnion(emoji),
-        })
+        }
+
+        if (!reactionsOrder.includes(emoji)) {
+            updates.reactionsOrder = arrayUnion(emoji);
+        }
+
+        await updateDoc(messageRef, updates);
     }
+}
+
+export const removeReaction = async (messageId, userId, emoji, roomID) => {
+    const messageRef = doc(db, "rooms", roomID, "messages", messageId);
+    const messageSnapshot = await getDoc(messageRef);
+
+    if (!messageSnapshot.exists()) {
+        throw new Error("Message not found, cannot remove reaction");
+    }
+
+    const data = messageSnapshot.data();
+    const currentCount = data.reactions?.[emoji] || 0;
+
+    const updates = {
+            [`reactions.${emoji}`]: increment(-1),
+            [`userReactions.${userId}`]: arrayRemove(emoji),
+
+    };
+
+    //  If the Reaction WILL hit 0, than remove the reaction from the Reactions Order List
+    if (currentCount <= 1 && Array.isArray(data.reactionsOrder)) {
+        updates.reactionsOrder = arrayRemove(emoji);
+    }
+
+    await updateDoc(messageRef, updates);
 }
 
 export const listenToReactions = (messages, onUpdate, roomID) => {
@@ -458,7 +487,6 @@ export const createClan = async (clanName, clanLogo, clanMembers, clanDescriptio
             createdAt: serverTimestamp(),
             gallery: {},
             timetables: {},
-            customEmojis: {}
         })
         
 
@@ -846,5 +874,25 @@ export const getUnRepliedMessages = async (roomID, currentUserID) => {
     return longUnrepliedMessages;
 }
 
+export const createCustomClanEmoji = async (clanID, emojiName, keywords, imageUrl) => {
+    const emojiRef = collection(db, "clan", clanID, "customEmojis");
+
+    await addDoc(emojiRef, {
+        id: emojiName.toLowerCase(),
+        name: emojiName,
+        shortcodes: [emojiName.toLowerCase()],
+        keywords: keywords.split(",").map(k => k.trim().toLowerCase()),
+        skins: [{ src: imageUrl }],
+    })
+}
+
+export const getCustomClanEmojis = async (clanID) => {
+    const emojiRef = collection(db, "clan", clanID, "customEmojis");
+    const emojiSnapshot = await getDocs(emojiRef);
+
+    const emojis = emojiSnapshot.docs.map((doc) => ({id: doc.id, ...doc.data()}));
+
+    return emojis;
+}
 
 

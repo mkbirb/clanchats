@@ -163,6 +163,7 @@ const ReadMessage = () => {
                     key={message.id}
                     messageId={message.id}
                     reactions={reactions[message.id] || {}}
+                    reactionsOrder={message.reactionsOrder || []}
                     roomID={roomID}
                     userID={userID}
                     refreshTrigger={refreshReactions}

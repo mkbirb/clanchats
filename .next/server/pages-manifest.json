@@ -3,6 +3,6 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/dashboard": "pages/dashboard.js",
-  "/signUp": "pages/signUp.js",
-  "/chat/[clan]": "pages/chat/[clan].js"
+  "/chat/[clan]": "pages/chat/[clan].js",
+  "/chat/[clan]/emojis": "pages/chat/[clan]/emojis.js"
 }

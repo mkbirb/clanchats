@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
-import SendMessage from "../../components/SendMessage";
-import ReadMessage from "../../components/ReadMessage";
-import ChatList from "../../components/ChatList";
-import { useCurrentUser } from "../../context/CurrentUserContext"; 
+import SendMessage from "../../../components/SendMessage";
+import ReadMessage from "../../../components/ReadMessage";
+import ChatList from "../../../components/ChatList";
+import { useCurrentUser } from "../../../context/CurrentUserContext"; 
 import { useRouter } from 'next/router';
-import { retrieveClan } from "../../components/firebaseConfig";
-import { navigateTo } from "../../components/Routes";
-import SearchMessages from "../../components/SearchMessages";
-import ReplyList from "../../components/ReplyList";
-import ClanHome from "../../components/ClanHome";
+import { retrieveClan } from "../../../components/firebaseConfig";
+import { navigateTo } from "../../../components/Routes";
+import SearchMessages from "../../../components/SearchMessages";
+import ReplyList from "../../../components/ReplyList";
+import ClanHome from "../../../components/ClanHome";
 
 const chat = () => {
 
