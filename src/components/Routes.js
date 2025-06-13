@@ -7,6 +7,7 @@ export const Routes = {
     DASHBOARD: '/dashboard',
     CHAT: (clan) => `/chat/${clan}`,
     CLANEMOJIS: (clan) => `/chat/${clan}/emojis`,
+    CLANMEMBERLIST: (clan) => `/chat/${clan}/members`
 }
 
 export const navigateTo = (router, route, param = null) => {

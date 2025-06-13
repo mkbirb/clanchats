@@ -2,11 +2,11 @@
 import emoji from 'node-emoji';
 
 export function emojiParser(text, customEmojis) {
-  const parts = text.split(/(:[a-zA-Z0-9_+-]+:)/g); // splits on :emoji: patterns
+  const parts = text.split(/(:[a-zA-Z0-9_+-]+:)/g); 
 
   return parts.map((part, index) => {
     if (/^:[a-zA-Z0-9_+-]+:$/.test(part)) {
-      const shortcode = part.slice(1, -1); // remove colons
+      const shortcode = part.slice(1, -1);
 
       // First try to match custom emoji
       const customEmoji = customEmojis.find(e => e.shortcodes.includes(shortcode));

@@ -1,5 +1,5 @@
 import { db, auth} from '../firebase';
-import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, arrayRemove, arrayUnion, Timestamp } from "firebase/firestore";
+import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, arrayRemove, arrayUnion, Timestamp, startAfter, limit } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, getAuth, signInWithPopup, GoogleAuthProvider} from "firebase/auth";
 import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
 import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
@@ -318,22 +318,26 @@ export const getSpecificUsersIDs = async (usernames) => {
 }
 
 // Retrieves the User Document based on UserID
-export const getUserByID = async(userID) => {
-    const userRef = doc(db, "users", userID);
+export const getUserByID = async (userID) => {
+    if (!userID) {
+        console.warn("getUserByID called with invalid ID:", userID);
+        return null;
+    }
 
+    const userRef = doc(db, "users", userID);
     const userSnapshot = await getDoc(userRef);
 
     if (userSnapshot.exists()) {
         return {
-            id: userSnapshot.id,      
-            ...userSnapshot.data(),  
+            id: userSnapshot.id,
+            ...userSnapshot.data(),
         };
-    } 
-    else {
-        console.warn("No user found for the ID ", userID);
+    } else {
+        console.warn("No user found for the ID", userID);
         return null;
     }
-}
+};
+
 
 // Search for users in the Firestore that begin with the Input
 export const searchUsers = async (input) => {
@@ -893,6 +897,59 @@ export const getCustomClanEmojis = async (clanID) => {
     const emojis = emojiSnapshot.docs.map((doc) => ({id: doc.id, ...doc.data()}));
 
     return emojis;
+}
+
+export const getPaginatedMembers = async (clanID, pageSize, currentPage) => {
+    const clanRef = doc(db, "clan", clanID);
+    const clanSnap = await getDoc(clanRef);
+
+    if (!clanSnap.exists()) {
+        console.warn("Clan not found:", clanID);
+        return { docs: [], isLastPage: true };
+    }
+
+    const membersArray = clanSnap.data().members || [];
+
+    // Calculate pagination slice
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const pagedUserIDs = membersArray.slice(startIndex, endIndex);
+
+    // Fetch user data for these userIDs
+    const members = await Promise.all(
+        pagedUserIDs.map(async (userID) => {
+            const userData = await getUserByID(userID);
+            return userData || { id: userID, name: "Unknown" };
+        })
+    );
+
+    // Determine if last page
+    const isLastPage = endIndex >= membersArray.length;
+
+    return {
+        docs: members,
+        isLastPage,
+    };
+};
+
+
+
+export const removeClanMember = async (clanID, userID) => {
+    const clanRef = doc(db, "clan", clanID);
+
+    await updateDoc(clanRef, {
+        members: arrayRemove(userID),
+    });
+
+    console.log(`User ${userID} removed from clan ${clanID}`);
+}
+
+export const addClanMember = async (clanID, userID) => {
+    const clanRef = doc(db, "clan", clanID);
+
+    await updateDoc(clanRef, {
+        members: arrayUnion(userID)
+    })
 }
 
 

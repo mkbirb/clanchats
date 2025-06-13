@@ -9,6 +9,7 @@ import { useCurrentUser } from "../context/CurrentUserContext.js";
 import DisplayMyClans from "../components/DisplayMyClans.js";
 import Logout from "../components/Logout.js";
 import DashboardProfile from "../components/DashboardProfile.js";
+import UserSelector from "../components/UserSelector.js";
 
 const dashboard = () => {
     const [displayCreateClanModal, setDisplayCreateClanModal] = useState(false);
@@ -124,26 +125,7 @@ const dashboard = () => {
                         )
                     }
                     <label htmlFor="addMembers"> Who is in your Clan? </label>
-                    <input id="addMembers" type="text" placeholder="Add Usernames" value={addPeopleInput} onChange={(e) => setAddPeopleInput(e.target.value)}/>
-                    { //Displaying of Username Suggestion List
-                        (usernameSuggestions.length > 0) && showUsernameDropdown && (
-                            <>
-                                <ul>
-                                {usernameSuggestions.map((user, index) => {
-                                    // Dont suggest a Username that is already in the Clan Member List
-                                    if (!clanMemberList.includes(user)) {
-                                        return (
-                                            <li key={index} onClick={() => handleAddClanMember(user)}>
-                                                {user}
-                                            </li>
-                                        );
-                                    }
-                                    return null; 
-                                })}
-                                </ul>
-                            </>
-                        )
-                    }
+                    <UserSelector onAdd={handleAddClanMember} selectedUsers={clanMemberList} />
                     { // Displaying of the Clan Members that is currently being added
                         (clanMemberList.length > 0) && (
                             <>

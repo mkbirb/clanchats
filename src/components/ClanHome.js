@@ -16,7 +16,7 @@ const ClanHome = ({clanData}) => {
             <button> Calender </button>
             <button> Gallery </button>
             <button onClick={() => {navigateTo(router, 'CLANEMOJIS', clanData.id)}}> Clan Emojis </button>
-            <button> Members </button>
+            <button onClick={() => {navigateTo(router, 'CLANMEMBERLIST', clanData.id)}}> Members </button>
         </>
     )
 }
