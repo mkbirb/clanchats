@@ -491,6 +491,7 @@ export const createClan = async (clanName, clanLogo, clanMembers, clanDescriptio
             createdAt: serverTimestamp(),
             gallery: {},
             timetables: {},
+            slides: [],
         })
         
 
@@ -951,5 +952,32 @@ export const addClanMember = async (clanID, userID) => {
         members: arrayUnion(userID)
     })
 }
+
+export const saveClanSlides = async(clanID, uploadedURLs) => {
+      console.log("clanID:", clanID);
+    const clanRef = doc(db, "clan", clanID);
+
+    await updateDoc(clanRef, {
+        slides: uploadedURLs
+    });
+}
+
+export const getClanSlides = async(clanID) => {
+    const clanRef = doc(db, "clan", clanID);
+
+    const clanSnap = await getDoc(clanRef);
+
+    if (clanSnap.exists()) {
+        const data = clanSnap.data();
+        
+        return data.slides || [];
+    }
+    else {
+        console.error("No such clan document, so cannot retrieve Clan Slides!");
+
+        return [];
+    }
+}
+
 
 

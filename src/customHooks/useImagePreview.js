@@ -4,6 +4,7 @@ import { useState } from 'react';
 const useImagePreview = () => {
     const [imageFile, setImageFile] = useState(null);
     const [previewURL, setPreviewURL] = useState(null);
+    const [multiplePreviewURLs, setMultiplePreviewURLs] = useState([]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -24,10 +25,26 @@ const useImagePreview = () => {
         }
     };
 
+    // For when the User uploads multiple Pictures that needs to be previewed
+    const handleMultipleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        const newPreviews = files.map(file => ({
+            file,
+            url: URL.createObjectURL(file)
+        }));
+        setMultiplePreviewURLs(prev => [...prev, ...newPreviews]);
+    };
+
     const resetPreview = () => {
         setImageFile(null);
         setPreviewURL(null);
     };
+
+    // Resets the multiple images that the User has uploaded
+    const resetMultiplePreview = () => {
+        multiplePreviewURLs.forEach(p => URL.revokeObjectURL(p.url));
+        setMultiplePreviewURLs([]);
+    }
 
     // Allows the setting of the Image Preview through URL
     const setPreviewManually = (url) => {
@@ -38,9 +55,13 @@ const useImagePreview = () => {
     return {
         imageFile,
         previewURL,
+        multiplePreviewURLs,
+        setMultiplePreviewURLs,
         setPreviewManually,
         handleImageChange,
-        resetPreview
+        handleMultipleImageChange,
+        resetPreview,
+        resetMultiplePreview
     }
 };
 
