@@ -33,7 +33,7 @@ const ClanHome = ({clanData}) => {
             <p> Annoucements: </p>
             <p> Description: </p>
             <p> {clanData.description}</p>
-            <button> Calender </button>
+            <button onClick={() => {navigateTo(router, 'CLANCALENDER', clanData.id)}}> Calender </button>
             <button> Gallery </button>
             <button onClick={() => {navigateTo(router, 'CLANEMOJIS', clanData.id)}}> Clan Emojis </button>
             <button onClick={() => {navigateTo(router, 'CLANMEMBERLIST', clanData.id)}}> Members </button>

@@ -979,5 +979,71 @@ export const getClanSlides = async(clanID) => {
     }
 }
 
+export const getClanCalenderEvents = async (clanID) => {
+  const calenderRef = collection(db, "clan", clanID, "calender");
+  const snapshot = await getDocs(calenderRef);
+
+  if (!snapshot.empty) {
+    const docs = snapshot.docs.map(doc => {
+      const data = doc.data();
+
+      const startDate = data.startDate; 
+      const endDate = data.endDate || startDate;
+
+      return {
+        id: doc.id,
+        title: data.title || "(No Title)",
+        description: data.description || "",
+        start: startDate,
+        end: endDate,
+        type: data.type || "",
+      };
+    });
+
+    return docs;
+  } else {
+    console.error("Clan Calendar cannot be retrieved");
+    return [];
+  }
+};
+
+
+export const createClanCalenderEvent = async(clanID, title, startDate, endDate, description, type) => {
+    try {
+        const calenderRef = collection(db, "clan", clanID, "calender");
+
+        await addDoc(calenderRef, {
+            title: title,
+            startDate: startDate,
+            endDate: endDate,
+            description: description || "",
+            type: type,
+            createdAt: new Date(),
+        });
+
+        console.log("Calendar event added successfully.");
+    }
+    catch (error) {
+        console.error("Failed to create clan event: ", error);
+    }
+}
+
+export const updateClanCalenderEvent = async(clanID, eventID, title, startDate, endDate, description, type) => {
+    const eventRef = doc(db, "clan", clanID, "calender", eventID)
+
+    await updateDoc(eventRef, {
+        title: title,
+        startDate: startDate,
+        endDate: endDate,
+        description: description,
+        type: type,
+    })
+}
+
+export const deleteClanCalenderEvent = async (clanID, eventID) => {
+  const eventRef = doc(db, "clan", clanID, "calender", eventID);
+  await deleteDoc(eventRef);
+};
+
 
 

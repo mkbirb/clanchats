@@ -1,8 +1,8 @@
 {
   "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/dashboard": "pages/dashboard.js",
-  "/chat/[clan]/members": "pages/chat/[clan]/members.js",
-  "/chat/[clan]": "pages/chat/[clan].js"
+  "/_error": "pages/_error.js",
+  "/chat/[clan]/calender": "pages/chat/[clan]/calender.js",
+  "/chat/[clan]": "pages/chat/[clan].js",
+  "/dashboard": "pages/dashboard.js"
 }

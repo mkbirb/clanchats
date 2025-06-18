@@ -4,9 +4,12 @@ import { ReplyProvider } from '../context/ReplyContext';
 import ProtectedRoute from '../components/ProtectedRoute';
 import PublicRoute from '../components/PublicRoute';
 import "../styles/Globals.css";
+import Modal from 'react-modal';
 
 
 const protectedRoutes = ['/chat', '/dashboard']
+
+Modal.setAppElement('#__next');
 
 export default function App({ Component, pageProps }) {
   // Check if the current route being accessed is a Protected Route
