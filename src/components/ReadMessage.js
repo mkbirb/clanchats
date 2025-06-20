@@ -9,6 +9,8 @@ import ViewImage from "./ViewImage.js";
 import ReactionsDisplay from "./ReactionsDisplay.js";
 import DisplayRoomLevel from "./DisplayRoomLevel.js";
 import useFetchMessageOwner from "../customHooks/useFetchMessageOwner.js";
+import { useRouter } from "next/router.js";
+import useCustomEmojis from "../customHooks/useCustomEmojis.js";
 
 
 const ReadMessage = () => {
@@ -29,6 +31,10 @@ const ReadMessage = () => {
     // Used, so the Reactions are able to update to show that User has reacted with that emoji that would be passed 
     // To the Reactions Display Component
     const [refreshReactions, setRefreshReactions] = useState(false);
+
+    // Retrieve the Clan from the Query
+    const { clan } = useRouter().query;
+    const { customEmojis } = useCustomEmojis(clan);
 
     useEffect(() => {
         console.log("Room ID:", roomID);
@@ -97,6 +103,37 @@ const ReadMessage = () => {
       return `${formattedDate} ${formattedTime}`
     }
 
+const renderMessageWithCustomEmojis = (text) => {
+  return text
+    .split(/(:\w+:)/g) 
+    .flatMap((part, i) => {
+      const match = part.match(/^:(\w+):$/);
+      if (match) {
+        const emojiId = match[1];
+        const emoji = customEmojis.find((e) => e.id === emojiId);
+
+        if (emoji) {
+          return (
+            <img
+              key={`emoji-${i}`}
+              src={emoji.skins?.[0]?.src || emoji.imageUrl}
+              alt={emoji.name}
+              title={emoji.name}
+              className="w-5 h-5 !inline-block !align-middle !mx-1"
+            />
+          );
+        }
+      }
+
+      // Split normal text on \n and insert <br /> manually
+      return part.split('\n').flatMap((line, j, arr) =>
+        j < arr.length - 1
+          ? [<span key={`${i}-${j}`}>{line}</span>, <br key={`br-${i}-${j}`} />]
+          : [<span key={`${i}-${j}`}>{line}</span>]
+      );
+    });
+};
+
     return (
         <>
           <p>Messages {userID}</p>
@@ -133,8 +170,8 @@ const ReadMessage = () => {
                           setEditText(null);}}> Cancel </button>
                     </>
                   ) : (
-                    <div id={`message-${message.id}`}>
-                      <p>{message.text} </p>
+                    <div id={`message-${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
+                      {renderMessageWithCustomEmojis(message.text)} 
                     </div>
                     )}
 

@@ -73,7 +73,7 @@ const ClanAnnoucements = ({clanData}) => {
         setTitle("");
         setDescription("");
         if (!isEdit) {
-            setType("");  // or setType("General") if you want default
+            setType("");  
         }
         setAttachments("");
         setBanner("");

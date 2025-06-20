@@ -23,7 +23,18 @@ const SendMessage = ({onReplySent}) => {
 
 
     const addEmoji = (emoji) => {
-        setMessage(prev => prev + emoji.native);
+        if (emoji.native) {
+            // Add if its just a Native Emoji
+            setMessage(prev => prev + emoji.native);
+        }
+        else if (emoji.id) {
+            // For the handling of Custom Emojis
+            setMessage(prev => prev + `:${emoji.id}:`);
+        }
+        else {
+            console.log("Unexpected Emoji format for adding Emojis");
+        }
+        
     }
 
     const handleSend = async(e) =>  {
