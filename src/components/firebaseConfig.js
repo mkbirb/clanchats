@@ -1045,5 +1045,64 @@ export const deleteClanCalenderEvent = async (clanID, eventID) => {
   await deleteDoc(eventRef);
 };
 
+export const createClanAnnouncements = async (clanID, title, description, type, banner, attachments) => {
+    const announcementsRef = collection(db, "clan", clanID, "announcements");
+
+    await addDoc(announcementsRef, {
+        title: title,
+        description: description,
+        type: type,
+        banner: banner,
+        attachments: attachments,
+        createdAt: new Date(),
+        editedAt: null,
+    })
+}
+
+export const retrieveClanAnnoucements = async (clanID) => {
+    const announcementsRef = collection(db, "clan", clanID, "announcements");
+
+    const snapshot = await getDocs(announcementsRef);
+
+    if (!snapshot.empty) {
+      const docs = snapshot.docs.map(doc => {
+      const data = doc.data();
+
+      return {
+        id: doc.id, ...data
+      };
+    });
+
+    return docs;
+  } 
+  else {
+    console.error("Clan Annoucements cannot be retrieved");
+    return [];
+  }
+}
+
+export const editClanAnnoucements = async (clanID, announcementsID, title, description, type, banner, attachments) => {
+    const announcementRef = doc(db, "clan", clanID, "announcements", announcementsID);
+    const snapshot = await getDoc(announcementRef);
+    const originalData = snapshot.data();
+
+    await updateDoc(announcementRef, {
+        title: title,
+        description: description,
+        type: type,
+        banner: banner,
+        attachments: attachments,
+        createdAt: originalData.createdAt ?? new Date(),
+        editedAt: new Date(),
+    })
+}
+
+export const deleteClanAnnoucement = async (clanID, announcementsID) => {
+    const announcementRef = doc(db, "clan", clanID, "announcements", announcementsID);
+
+    await deleteDoc(announcementRef);
+}
+
+
 
 

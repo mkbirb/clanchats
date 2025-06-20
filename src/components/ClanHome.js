@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import Slideshow from "./Slideshow";
 import { ClanSlidesDefault } from "./definitions/ClanSlideDefault";
 import { getClanSlides } from "./firebaseConfig";
+import ClanAnnoucements from "./ClanAnnoucements";
 
 const ClanHome = ({clanData}) => {
     const [slides, setSlides] = useState(ClanSlidesDefault);
@@ -30,7 +31,7 @@ const ClanHome = ({clanData}) => {
             <p> {clanData.name} Home </p>
             <img src={clanData.logo} alt="Clan Logo"/>
             <Slideshow images={slides}/>
-            <p> Annoucements: </p>
+            <ClanAnnoucements clanData={clanData} />
             <p> Description: </p>
             <p> {clanData.description}</p>
             <button onClick={() => {navigateTo(router, 'CLANCALENDER', clanData.id)}}> Calender </button>
