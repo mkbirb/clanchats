@@ -490,7 +490,6 @@ export const createClan = async (clanName, clanLogo, clanMembers, clanDescriptio
             description: clanDescription,
             createdAt: serverTimestamp(),
             gallery: {},
-            timetables: {},
             slides: [],
         })
         
@@ -1103,6 +1102,79 @@ export const deleteClanAnnoucement = async (clanID, announcementsID) => {
     await deleteDoc(announcementRef);
 }
 
+export const createTimetable =  async (clanID, title, date, startTime, endTime, price, bringItems, additionalNotes) => {
+    const timetableRef = collection(db, "clan", clanID, "timetables");
+
+    await addDoc(timetableRef, {
+        title: title,
+        date: date,
+        startTime: startTime,
+        endTime: endTime,
+        price: price,
+        bringItems: bringItems,
+        additionalNotes: additionalNotes,
+        createdAt: serverTimestamp(),
+    })
+};
+
+export const retrieveAllClanTimetables = async (clanID) => {
+  const timetablesRef = collection(db, "clan", clanID, "timetables");
+  const timetableDocs = await getDocs(timetablesRef);
+
+  const timetables = timetableDocs.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+
+  return timetables;
+};
+
+export const retrieveClanTimetable = async (clanID, timetableID) => {
+    const timetablesRef = doc(db, "clan", clanID, "timetables", timetableID);
+    const snapshot = await getDoc(timetablesRef);
+
+    if (!snapshot.exists()) {
+        console.warn("Timetable not found");
+        return null;
+    }
+
+    return { id: snapshot.id, ...snapshot.data() };
+}
+
+export const createTimetableTask = async (clanID, title, duration, description) => {
+    if (!clanID) throw new Error("clanID is missing");
+
+    const taskRef = collection(db, "clan", clanID, "tasks");
+
+    await addDoc(taskRef, {
+        title: title,
+        duration: duration,
+        description: description,
+        // Task can belong to a specific Clan, so need to refer to it
+        clanRef: clanID,
+    });
+}
+
+export const deleteTimetableTask = async (clanID, taskID) => {
+
+    const taskRef = doc(db, "clan", clanID, "tasks", taskID);
+
+    await deleteDoc(taskRef);
+
+}
+
+// Returns all of the Global Tasks belonging to the specific clan
+export const retrieveAllTimetableTasks = async (clanID) => {
+    const taskRef = collection(db, "clan", clanID, "tasks");
+    const snapshot = await getDocs(taskRef);
+
+    const tasks = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+
+    return tasks;
+}
 
 
 

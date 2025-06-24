@@ -8,13 +8,15 @@ export const Routes = {
     CHAT: (clan) => `/chat/${clan}`,
     CLANEMOJIS: (clan) => `/chat/${clan}/emojis`,
     CLANMEMBERLIST: (clan) => `/chat/${clan}/members`,
-    CLANCALENDER: (clan) => `/chat/${clan}/calender`
+    CLANCALENDER: (clan) => `/chat/${clan}/calender`,
+    CLANTIMETABLES: (clan) => `/chat/${clan}/timetables`,
+    SPECIFICTIMETABLE: (clan, timetableID) => `/chat/${clan}/timetables/${timetableID}`,
 }
 
-export const navigateTo = (router, route, param = null) => {
-    if (typeof Routes[route] === 'function' && param) {
+export const navigateTo = (router, route, ...params) => {
+    if (typeof Routes[route] === 'function' && params.length > 0) {
         // If the Route given is a Function for Dynamic Routes, then navigate there
-        router.push(Routes[route](param))
+        router.push(Routes[route](...params));
     }
     else if (typeof Routes[route] === 'string') {
         // For Static Routes
