@@ -1,0 +1,72 @@
+import { onSnapshot, writeBatch, arrayUnion, doc, query, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
+
+// Keeps track of the Messages being Delivered to the Recipient
+export function messageDeliveryTracking(roomID, currentUserID) {
+    const messageRef = query(
+        collection(db, `rooms/${roomID}/messages`)
+    );
+
+    const unsubscribe = onSnapshot(messageRef, (snapshot) => {
+        const batch = writeBatch(db);
+        
+        snapshot.docs.forEach((doc) => {
+            const message = doc.data();
+
+            if (!message.deliveredTo?.includes(currentUserID)) {
+                // Queues an update if the current user has not been marked as someone who has its messages delivered too yet
+                batch.update(doc.ref, {
+                    deliveredTo: arrayUnion(currentUserID),
+                })
+            }
+        });
+
+        // Sends the update queue in one go
+        batch.commit();
+    })
+
+    return unsubscribe;
+}
+
+export async function messageSeenTracking(messages, currentUserID, roomID) {
+    const unseenMessages = messages.filter(
+        msg => !msg.seenBy?.[currentUserID]
+    )
+
+    // Do all or nothing update
+    const batch = writeBatch(db);
+
+
+    unseenMessages.forEach((msg, index) => {
+        if (!msg) {
+            console.error(`Message at index ${index} is undefined or null`, msg);
+            return;
+        }
+
+        if (!msg.id) {
+            console.error(` Missing message ID for message at index ${index}:`, msg);
+            return;
+        }
+
+        if (!roomID) {
+            console.error(`roomID is undefined — cannot construct Firestore path.`);
+            return;
+        }
+
+        if (!currentUserID) {
+            console.error(`currentUserID is undefined — cannot track seenBy.`);
+            return;
+        }
+
+        try {
+            const messageRef = doc(db, "rooms", roomID, "messages", msg.id);
+            batch.update(messageRef, {
+                [`seenBy.${currentUserID}`]: serverTimestamp(),
+            });
+        } catch (err) {
+            console.error(`Error creating document reference or updating batch for msg ID: ${msg.id}`, err);
+        }
+    });
+
+    await batch.commit();
+}

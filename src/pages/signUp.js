@@ -3,6 +3,7 @@ import {useRouter} from "next/router";
 import {createUser, signInWithGoogle, retrieveGoogleAccountUser} from "../components/firebaseConfig.js";
 import {navigateTo} from '../components/Routes';
 import { useCurrentUser } from "../context/CurrentUserContext"; 
+import { handleGoogleAccountSubmit } from "../utils/handleGoogleAccountSubmit.js";
 
 
 const signUp = () => {
@@ -12,10 +13,10 @@ const signUp = () => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
+    
+    const { changeUser } = useCurrentUser();
     // For the Navigation to success page
     const router = useRouter();
-    
-    const { changeUser } = useCurrentUser(); 
 
     const handleSubmit = async (e) => {
         // Prevent refresh so we keep all the States still
@@ -46,20 +47,6 @@ const signUp = () => {
         }
     }
 
-    const handleGoogleAccountSubmit = async (e) => {
-        e.preventDefault();
-
-        const googleAccount = await signInWithGoogle();
-        console.log("Google Account recieved ", googleAccount.email);
-
-        const googleAccountUserData = await retrieveGoogleAccountUser(googleAccount.email);
-
-        if(googleAccountUserData) {
-            // Change to the respective Account stored
-            changeUser(googleAccountUserData);
-            navigateTo(router, "DASHBOARD");
-        }
-    }   
     return (
         <>
             <h1 className="font-mono text-3xl font-bold text-blue-600"> Sign up!!</h1>
@@ -78,7 +65,7 @@ const signUp = () => {
                     Submit
                 </button>
             </form>
-            <button onClick={handleGoogleAccountSubmit}> Sign Up with Google </button>
+            <button onClick={(e) => handleGoogleAccountSubmit(e, changeUser, router)}> Sign Up with Google </button>
         </>
     )
 }
