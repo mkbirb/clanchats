@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCurrentUser } from "../../../context/CurrentUserContext";
 import { createCustomClanEmoji, getCustomClanEmojis } from "../../../components/firebaseConfig";
 import { uploadImageToImgBB } from "../../../utils/imageUpload";
@@ -12,6 +12,8 @@ const clanemojis = () => {
     const [keywords, setKeywords] = useState("");
 
     const [customEmojis, setCustomEmojis] = useState([]);
+
+    const fileInputRef = useRef(null);
 
     // Gets the Clan ID from the URL Params, which should be same as the Dynamic Folder in Next.js Pages Folder Structure!
     const router = useRouter();
@@ -33,7 +35,9 @@ const clanemojis = () => {
     }, [clan])
 
 
-    const handleUpload = async () => {
+    const handleUpload = async (e) => {
+        e.preventDefault();
+
         try {
 
             let imageUrl = null;
@@ -61,6 +65,11 @@ const clanemojis = () => {
         }
 
         setFile(null);
+
+        // Also clear the File Input Name being displayed
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""; 
+         }
         setName("");
         setKeywords("");
     }
@@ -70,10 +79,12 @@ const clanemojis = () => {
             <button onClick={() => navigateTo(router, 'CHAT', clan)}> To Dashboard</button>
             <p> Clan Emojis </p>
             <p> Add new Custom Emoji</p>
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} />
-            <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <input type="text" placeholder="Keywords (comma separated)" value={keywords} onChange={(e) => setKeywords(e.target.value)} />
-            <button onClick={handleUpload}> Add </button>
+            <form onSubmit={handleUpload}>
+                <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0] || null)} ref={fileInputRef} required/>
+                <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+                <input type="text" placeholder="Keywords (comma separated)" value={keywords} onChange={(e) => setKeywords(e.target.value)} required />
+                <button type="submit"> Add </button>
+            </form>
 
             <p> The Custom Emojis </p>
             {customEmojis.length === 0 && <p> No custom emojis yet</p>}

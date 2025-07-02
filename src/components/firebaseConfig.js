@@ -1191,3 +1191,19 @@ export async function getCachedUserByID(uid) {
   return null;
 }
 
+export const startTyping = async (roomID, currentUser) => {
+
+    const typingRef = doc(db, "rooms", roomID, "typing", currentUser.id);
+
+    await setDoc(typingRef, {
+        userID: currentUser.id,
+        displayName: currentUser.name,
+        timestamp: serverTimestamp()
+    })
+}
+
+export const stopTyping = async (roomID, currentUserID) => {
+    const typingRef = doc(db, "rooms", roomID, "typing", currentUserID);
+
+    await deleteDoc(typingRef);
+}

@@ -1,18 +1,22 @@
 import React, { useState, useContext, useEffect, useRef} from "react";
-import {createMessage, incrementRoomExperience} from "./firebaseConfig.js";
-import { useCurrentUser } from "../context/CurrentUserContext"; 
+import {createMessage, incrementRoomExperience, startTyping, stopTyping} from "./firebaseConfig.js";
+import { CurrentUserProvider, useCurrentUser } from "../context/CurrentUserContext"; 
 import { uploadImageToImgBB } from '../utils/imageUpload';
 import { ReplyContext } from "../context/ReplyContext.js";
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 import EmojiPicker from './EmojiPicker.js';
 import { jumpToMessage } from "../utils/jumpToMessage.js";
+import { useTypingUsers } from "../customHooks/useTypingUsers.js";
 
 const SendMessage = ({onReplySent}) => {
     const [message, setMessage] = useState("");
-    const { userID, roomID, changeRoomID } = useCurrentUser();
+    const { userID, roomID, user} = useCurrentUser();
     const [image, setImage] = useState(null);
     const {replyTo, setReplyTo} = useContext(ReplyContext);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    
+    const typingTimeout = useRef(null);
 
     const expGivenPerMessage = 5;
 
@@ -20,7 +24,6 @@ const SendMessage = ({onReplySent}) => {
 
     // When the User sends a message, page would scroll down to the bottom of Chat Messages
     const bottomRef = useRef(null);     
-
 
     const addEmoji = (emoji) => {
         if (emoji.native) {
@@ -68,6 +71,30 @@ const SendMessage = ({onReplySent}) => {
         setReplyTo(null);
         setOriginalMessage(null);
     }
+
+    const handleMessageInputChange = (e) => {
+        setMessage(e.target.value);
+
+        if (!isTyping) {
+            setIsTyping(true);
+            startTyping(roomID, user);
+        }
+
+        // If there is already a Timeout from previous typing, then reset timer
+        if (typingTimeout.current) {
+            clearTimeout(typingTimeout.current);
+        }
+
+        // After a period of Inactivity from Typing, stop Typing Indicator
+        typingTimeout.current = setTimeout(() => {
+            setIsTyping(false);
+            stopTyping(roomID, userID);
+        }, 3000)
+    }
+
+    // Retrieve the Users that are typing
+    const typingUsers = useTypingUsers(roomID, userID)
+
     return (
         <>
             <form onSubmit={handleSend}>
@@ -81,7 +108,7 @@ const SendMessage = ({onReplySent}) => {
                 <textarea 
                     placeholder="Send a Message" 
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    onChange={(e) => handleMessageInputChange(e)}
                     onKeyDown={(e) => {
                         // Also ensures that Shift + Enter still creates a New Line
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -95,11 +122,16 @@ const SendMessage = ({onReplySent}) => {
                     accept="image/*"
                 />
                 <input
-                type="submit"
-                className="!bg-blue-500 !text-white !font-semibold !py-2 px-4 !rounded-lg shadow-md hover:!bg-blue-600 !focus:outline-none focus:ring-2 !focus:ring-blue-500 !focus:ring-opacity-50 active:!bg-blue-700"
+                    type="submit"
+                    className="!bg-blue-500 !text-white !font-semibold !py-2 px-4 !rounded-lg shadow-md hover:!bg-blue-600 !focus:outline-none focus:ring-2 !focus:ring-blue-500 !focus:ring-opacity-50 active:!bg-blue-700"
                 >
                 </input>
             </form>
+            {typingUsers.length > 0 && ( 
+                <div>
+                    {typingUsers.map(user => user.displayName).join(", ")} typing...
+                </div>
+            )}
             <div ref={bottomRef} />
         </>
     );

@@ -5,6 +5,7 @@ import Slideshow from "./Slideshow";
 import { ClanSlidesDefault } from "./definitions/ClanSlideDefault";
 import { getClanSlides } from "./firebaseConfig";
 import ClanAnnoucements from "./ClanAnnoucements";
+import LeaveClan from "./LeaveClan";
 
 const ClanHome = ({clanData}) => {
     const [slides, setSlides] = useState(ClanSlidesDefault);
@@ -39,6 +40,7 @@ const ClanHome = ({clanData}) => {
             <button onClick={() => {navigateTo(router, 'CLANTIMETABLES', clanData.id)}}> Timetables </button>
             <button onClick={() => {navigateTo(router, 'CLANEMOJIS', clanData.id)}}> Clan Emojis </button>
             <button onClick={() => {navigateTo(router, 'CLANMEMBERLIST', clanData.id)}}> Members </button>
+            <LeaveClan clanData={clanData}/>
         </>
     )
 }
