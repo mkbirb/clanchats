@@ -5,6 +5,9 @@ import { createServerSearchParamsForServerPage } from 'next/dist/server/request/
 import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
 import { levelDefinition, maxLevel } from './definitions/LevelDefinitions';
 
+// Used for User Caching
+const userCache = new Map();
+
 export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null, reactions = null) => {
     if ((text.length == 0) && (imageUrl == null)){
         // Prevents Empty Messages
@@ -20,7 +23,9 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
             roomID: roomId,
             createdAt: serverTimestamp(),
             editedAt: null,
-            seen: seen,
+            seenBy: seen,
+            // DeliveredTo helps indicate that the Message has been recieved by the recipient device
+            deliveredTo: null,
             imageURL: imageUrl,
             replyTo: replyTo,
             reactions: {},
@@ -430,27 +435,23 @@ export const removeReaction = async (messageId, userId, emoji, roomID) => {
     await updateDoc(messageRef, updates);
 }
 
-export const listenToReactions = (messages, onUpdate, roomID) => {
-    const unsubscribers = [];
+export const listenToReactions = (roomID, onUpdate) => {
+    const messagesCollectionRef = collection(db, "rooms", roomID, "messages")
   
-    messages.forEach((message) => {
-      const messageRef = doc(db, "rooms", roomID, "messages", message.id);
   
-      const unsubscribe = onSnapshot(messageRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          // Update the Message with the Reaction Emoji and its Counts
-          onUpdate(message.id, data.reactions || {});
-        }
-      });
-  
-      unsubscribers.push(unsubscribe);
+    const unsubscribe = onSnapshot(messagesCollectionRef, (snapshot) => {
+        snapshot.docChanges().forEach(change => {
+            const docData = change.doc.data();
+            const messageID = change.doc.id;
+            
+            // Only do live updates for the specific Message that has its Reactions changed
+            if (docData.reactions) {
+                onUpdate(messageID, docData.reactions);
+            }
+        })
     });
-  
-    // Return a function to unsubscribe all
-    return () => {
-      unsubscribers.forEach(unsub => unsub());
-    };
+
+    return unsubscribe;
   };
 
 export const getUserReactionsFromMessage = async (messageId, roomID, userId) => {
@@ -1176,5 +1177,17 @@ export const retrieveAllTimetableTasks = async (clanID) => {
     return tasks;
 }
 
+// Only fetch user if it has not been cached
+export async function getCachedUserByID(uid) {
+  if (userCache[uid]) return userCache[uid];
 
+  const userDoc = await getDoc(doc(db, 'users', uid));
+  if (userDoc.exists()) {
+    const data = userDoc.data();
+    userCache[uid] = data;
+    return data;
+  }
+
+  return null;
+}
 

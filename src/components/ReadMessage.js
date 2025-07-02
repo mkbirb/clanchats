@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID} from "./firebaseConfig.js";
+import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID, retrieveRoomBasedOnID, getCachedUserByID} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
@@ -11,6 +11,9 @@ import DisplayRoomLevel from "./DisplayRoomLevel.js";
 import useFetchMessageOwner from "../customHooks/useFetchMessageOwner.js";
 import { useRouter } from "next/router.js";
 import useCustomEmojis from "../customHooks/useCustomEmojis.js";
+import { messageDeliveryTracking, messageSeenTracking } from "../utils/messageTracking.js";
+import useSeenMessages from "../customHooks/useSeenMessages.js";
+import SeenIcon from "./SeenIcon.js";
 
 
 const ReadMessage = () => {
@@ -36,6 +39,15 @@ const ReadMessage = () => {
     const { clan } = useRouter().query;
     const { customEmojis } = useCustomEmojis(clan);
 
+    // Members of the room
+    const [participants, setParticipants] = useState([]);
+
+    // To prevent Race Conditions, where the SeenIcon temp disappears for one of the participants, 
+    // when a new unseen (From recipient perspective) message is sent
+    const [lastStableSeenID, setLastStableSeenID] = useState(null);
+
+    const [participantData, setParticipantData] = useState({});
+
     useEffect(() => {
         console.log("Room ID:", roomID);
 
@@ -51,7 +63,7 @@ const ReadMessage = () => {
 
     // Updates the Messages Reactions based on Database
     useEffect(() => {
-      const unsubscribe = listenToReactions(messages, (messageId, reactionData) => {
+      const unsubscribe = listenToReactions(roomID, (messageId, reactionData) => {
         setReactions(prev => ({
           ...prev,
           [messageId]: reactionData
@@ -59,9 +71,91 @@ const ReadMessage = () => {
       }, roomID);
     
       return () => unsubscribe();
-    }, [messages]);
+    }, [roomID]);
 
     const messageUsername = useFetchMessageOwner(messages);
+
+    const targetUserID = participants
+    // If the Person is an Object than get the ID Property, otherwise if it is already an ID, just use it
+    .map(p => (typeof p === 'object' && 'id' in p ? p.id : p))
+    // Exclude the Current User
+    .find(uid => uid !== userID) || null;
+
+
+    const lastSeenMessage = [...messages]
+      .reverse()
+      .find(msg => {
+        // Convert the Object to Array
+        const seenArray = msg.seenBy ? Object.keys(msg.seenBy) : [];
+        return seenArray.includes(targetUserID);
+      });
+
+    const lastSeenMessageID = lastSeenMessage?.id;
+
+    // For the indicator that Message has been delivered to recipient
+    useEffect(() => {
+      const unsubscribe = messageDeliveryTracking(roomID, userID);
+      return () => unsubscribe()
+    }, [roomID, userID]);
+
+    // // For the Indicator that a Message has been seen by recipient
+    useSeenMessages(messages, userID, roomID);
+
+    useEffect(() => {
+      const fetchRoom = async () => {
+        try {
+          if (!roomID) return; 
+
+          const data = await retrieveRoomBasedOnID(roomID);
+
+            // Extract person1 and person2 into participants
+          const { person1, person2 } = data || {};
+          const participantList = [person1, person2].filter(Boolean);
+          setParticipants(participantList);
+        } catch (error) {
+          console.error("Failed to fetch room data:", error);
+        }
+      };
+
+      fetchRoom();
+    }, [roomID]);
+
+    useEffect(() => {
+      const fetchParticipantInfo = async () => {
+        const result = {};
+
+        for (const participant of participants) {
+          const uid = typeof participant === 'string' ? participant : participant.id;
+          const user = await getCachedUserByID(uid);
+          if (user) {
+            result[uid] = user;
+          }
+        }
+
+        setParticipantData(result); 
+      };
+
+      if (participants.length > 0) {
+        fetchParticipantInfo();
+      }
+    }, [participants]);
+
+
+    useEffect(() => {
+        if (!lastSeenMessageID) return;
+
+        if (!lastStableSeenID) {
+          setLastStableSeenID(lastSeenMessageID);
+        } 
+        else {
+          const currentIndex = messages.findIndex(m => m.id === lastSeenMessageID);
+          const previousIndex = messages.findIndex(m => m.id === lastStableSeenID);
+
+          if (currentIndex > previousIndex) {
+            setLastStableSeenID(lastSeenMessageID);
+          }
+        }
+    }, [lastSeenMessageID, messages]);
 
     const handleDelete = (messageId) => {
       deleteMessage(messageId, roomID);
@@ -170,8 +264,16 @@ const renderMessageWithCustomEmojis = (text) => {
                           setEditText(null);}}> Cancel </button>
                     </>
                   ) : (
-                    <div id={`message-${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
+                    <div id={`message-${message.id}`} data-id={`${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
                       {renderMessageWithCustomEmojis(message.text)} 
+                      {/* {console.log("Rendering message ID:", message.id)}
+                      {console.log("Last seen message ID:", lastSeenMessageID)} */}
+                      <SeenIcon 
+                        message={message} 
+                        currentUserID={userID} 
+                        lastSeenMessageID={lastStableSeenID} 
+                        showSeenIcon={message.id === lastStableSeenID}
+                        userMap={participantData}/>
                     </div>
                     )}
 

@@ -40,7 +40,7 @@ const SendMessage = ({onReplySent}) => {
     const handleSend = async(e) =>  {
         e.preventDefault();
 
-        const seen = false;
+        const seen = [];
 
         let imageUrl = null; 
 
