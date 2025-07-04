@@ -163,6 +163,9 @@ export const createUser = async (email, username, accountName, password, profile
             profilePicture: profilePicture,
             onlineStatus: null,
             wordStatus: null,
+            // Presence is automatically set by the app to help determine whether the User has gotten offline
+            presence: "online",
+            lastActive: serverTimestamp(),
             createdAt: new Date(),
         });
 
@@ -1206,4 +1209,42 @@ export const stopTyping = async (roomID, currentUserID) => {
     const typingRef = doc(db, "rooms", roomID, "typing", currentUserID);
 
     await deleteDoc(typingRef);
+}
+
+export const updateUserPresence = async (presence, userID) => {
+    const userRef = doc(db, "users", userID);
+
+    await updateDoc(userRef, {
+        presence,
+        lastActive: serverTimestamp()
+    })
+}
+
+export const subscribeToUserPresenceAndStatus = (userId, callback) => {
+  const userRef = doc(db, "users", userId);
+
+  const unsub = onSnapshot(userRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const presence = data.presence || "offline";
+      const status = data.onlineStatus || "online";
+      callback({ presence, status });
+    }
+  });
+
+  return unsub; 
+};
+
+export const updateUserPresenceWithBeacon = (presence, userID) => {
+    const userRefPath = `users/${userID}`;
+    const payload = JSON.stringify({
+        presence,
+        lastActive: Date.now(),
+    });
+
+    // Beacon is used, so the data is being sent and not getting canceled when the Tab closes
+    navigator.sendBeacon(
+        `/api/presence-update?path=${encodeURIComponent(userRefPath)}`,
+        payload
+    );
 }

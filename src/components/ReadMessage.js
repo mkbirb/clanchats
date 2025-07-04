@@ -14,6 +14,7 @@ import useCustomEmojis from "../customHooks/useCustomEmojis.js";
 import { messageDeliveryTracking, messageSeenTracking } from "../utils/messageTracking.js";
 import useSeenMessages from "../customHooks/useSeenMessages.js";
 import SeenIcon from "./SeenIcon.js";
+import PresenceDisplay from "./PresenceDisplay.js";
 
 
 const ReadMessage = () => {
@@ -232,6 +233,7 @@ const renderMessageWithCustomEmojis = (text) => {
         <>
           <p>Messages {userID}</p>
           <p>Room ID {roomID}</p>
+          <PresenceDisplay userID={targetUserID} />
           <DisplayRoomLevel />
           {
             messages.length === 0 ? (
