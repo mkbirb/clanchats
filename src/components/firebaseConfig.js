@@ -1262,3 +1262,24 @@ export const updateUserPresenceWithBeacon = (presence, userID) => {
         payload
     );
 }
+
+export const isUsernameTaken = async (username) => {
+
+    const userRef = collection(db, "users");
+
+    // Case Sensitive does not apply
+    const q = query(userRef, where("username", "==", username));
+
+    const querySnapshot = await getDocs(q);
+
+    return !querySnapshot.empty;
+}
+
+export const isEmailTaken = async (email) => {
+    const userRef = collection(db, "users");
+
+    const q = query(userRef, where("email", "==", email.toLowerCase()));
+
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+}

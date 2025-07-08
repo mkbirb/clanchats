@@ -4,8 +4,8 @@ import {retrieveUser} from "../components/firebaseConfig.js";
 import {navigateTo} from '../components/Routes';
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import background from '../images/jaggedcolourlinesback.jpg';
-import googleIcon from '../images/googleIcon.png';
 import { handleGoogleAccountSubmit } from "../utils/handleGoogleAccountSubmit.js";
+import GoogleLogin from "../components/GoogleLogin.js";
 
 
 
@@ -70,10 +70,7 @@ const login = () => {
                             required></input>
                         <button type="submit" className="!bg-amber-500 !mb-7 !mt-5 !rounded-2xl w-50 h-10 cursor-pointer !text-white !text-xl !font-bold">Login</button>
                     </form>
-                    <div className="cursor-pointer  !bg-white w-72 h-12 rounded-2xl flex items-center gap-5 justify-center !mb-5" onClick={(e) => handleGoogleAccountSubmit(e, changeUser, router)}>
-                        <img className="size-10" src={googleIcon.src} alt="Google Icon" />
-                        <p className="!text-xl !text-black !text-center !font-bold"> Login with Google </p>
-                    </div>
+                <GoogleLogin type={"Login"} changeUser={changeUser} router={router}/>
                     <p className="text-blue-100 text-lg cursor-pointer font-bold text-center underline !mb-5" onClick={toSignUp}> Sign Up Instead </p>
                 </div>
             </div>
