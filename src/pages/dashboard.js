@@ -10,7 +10,7 @@ import DisplayMyClans from "../components/DisplayMyClans.js";
 import Logout from "../components/Logout.js";
 import DashboardProfile from "../components/DashboardProfile.js";
 import UserSelector from "../components/UserSelector.js";
-import { usePresenceStatus } from "../customHooks/usePresenceStatus.js";
+import { UserPresenceTracking } from "../utils/userPresenceTracking.js";
 
 const dashboard = () => {
     const [displayCreateClanModal, setDisplayCreateClanModal] = useState(false);
@@ -95,11 +95,10 @@ const dashboard = () => {
 
     if (loading) return <p>Loading...</p>;
 
-    // Track the Users Presence
-    usePresenceStatus(userID);
 
     return (
         <>
+            <UserPresenceTracking />
             {user && user.username ? (
             <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome {user.username}!!</h1>
             ) : (

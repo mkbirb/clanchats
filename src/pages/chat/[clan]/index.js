@@ -9,6 +9,7 @@ import { navigateTo } from "../../../components/Routes";
 import SearchMessages from "../../../components/SearchMessages";
 import ReplyList from "../../../components/ReplyList";
 import ClanHome from "../../../components/ClanHome";
+import { UserPresenceTracking } from "../../../utils/userPresenceTracking";
 
 const chat = () => {
 
@@ -56,6 +57,7 @@ const chat = () => {
 
     return (
         <> 
+            <UserPresenceTracking />
             {
                 // Display once already fetched the Clan Data
                 clanData ? (

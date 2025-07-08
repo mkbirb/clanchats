@@ -1211,14 +1211,28 @@ export const stopTyping = async (roomID, currentUserID) => {
     await deleteDoc(typingRef);
 }
 
-export const updateUserPresence = async (presence, userID) => {
-    const userRef = doc(db, "users", userID);
 
-    await updateDoc(userRef, {
-        presence,
-        lastActive: serverTimestamp()
-    })
-}
+let lastWrittenPresence = null;
+let lastPresenceWriteTime = 0;
+
+export const updateUserPresence = async (presence, userID) => {
+  const now = Date.now();
+
+  // Throttle writes within 5 seconds
+  if (lastPresenceWriteTime && now - lastPresenceWriteTime < 5000) return;
+
+  // Avoid writing if presence is unchanged
+  if (presence === lastWrittenPresence) return;
+
+  lastPresenceWriteTime = now;
+  lastWrittenPresence = presence;
+
+  const userRef = doc(db, "users", userID);
+  await updateDoc(userRef, {
+    presence,
+    lastActive: serverTimestamp(),
+  });
+};
 
 export const subscribeToUserPresenceAndStatus = (userId, callback) => {
   const userRef = doc(db, "users", userId);

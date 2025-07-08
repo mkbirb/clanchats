@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Updates the FIrebase Document
+        // Updates the Firebase Document
         const docRef = doc(db, path);
         await updateDoc(docRef, {
             presence,

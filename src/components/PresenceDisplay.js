@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { subscribeToUserPresenceAndStatus } from "./firebaseConfig";
 import { getDisplayStatus } from "../utils/getDisplayStatus";
+import { useUserRTDBPresence } from "../customHooks/useUserRTDBPresence";
 
 const PresenceDisplay = ({userID}) => {
     const [presence, setPresence] = useState("offline");
@@ -46,7 +47,14 @@ const PresenceDisplay = ({userID}) => {
 
     }, [userID, isBackOnline])
 
-    const displayStatus = getDisplayStatus({status, presence});
+    const presenceFromRTDB = useUserRTDBPresence(userID);
+
+    const displayStatus = getDisplayStatus({
+        status,
+        presence: presenceFromRTDB
+    });
+
+    console.log("RTDB presence:", presenceFromRTDB);
 
     return (
         <>

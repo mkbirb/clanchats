@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { updateUserPresence, updateUserPresenceWithBeacon } from "../components/firebaseConfig";
+import { rtdb } from "../firebase";
+import { ref, set } from "firebase/database";
 
 // Idle Timeout is 2 Minutes
 const IDLE_TIMEOUT = 2 * 60 * 100;
@@ -12,11 +14,20 @@ export function usePresenceStatus(userID) {
 
     useEffect(() => {
         const setUserPresence = async (presence) => {
+            if (!userID) return;
+
             if (presence != currentPresence.current) {
                 currentPresence.current = presence;
                 await updateUserPresence(presence, userID);
             }
         }
+
+        // Helper to set RTDB presence state
+        const setRTDBPresence = (state) => {
+            if (!userID) return;
+            const statusRef = ref(rtdb, `/status/${userID}`);
+            set(statusRef, { state, lastChanged: Date.now() });
+        };
 
 
         // Define the Presences
@@ -47,11 +58,16 @@ export function usePresenceStatus(userID) {
 
         // Handles tab switching, where if the tab for the app is visible than mark online
         const handleVisibilityChange = () => {
+            if (!userID) return;
+            
             if (document.visibilityState === "visible") {
                 goOnline();
             } 
             else {
                 goIdle();
+
+                // Also update Realtime Database
+                setRTDBPresence("idle");
             }
         };
 
