@@ -1283,3 +1283,95 @@ export const isEmailTaken = async (email) => {
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
 }
+
+export const createPoll = async (question, options, multipleVotesAllowed, closedDate, userID, clanID) => {
+    const pollRef = collection(db, "clan", clanID, "polls");
+
+    await addDoc(pollRef, {
+        question: question,
+        options: options,
+        allowMultipleVotes: multipleVotesAllowed,
+        isOpen: true,
+        closedDate: closedDate,
+        createdBy: userID,
+        createdAt: serverTimestamp(),
+        voters: {},
+        voteCounts: {}
+    })
+}
+
+export const voteOnPoll = async (clanID, pollID, userID, selectedOptions) => {
+    const pollRef = doc(db, "clan", clanID, "polls", pollID);
+
+    const pollSnap = await getDoc(pollRef);
+
+    if (!pollSnap.exists()) return;
+
+    const poll = pollSnap.data();
+    const prevVotes = poll.voters?.[userID] || [];
+
+    // Only update if the Vote has changed
+    const sameVote = prevVotes.length === selectedOptions.length && prevVotes.every(v => selectedOptions.includes(v))
+    if (sameVote) return;
+
+    const voteCounts = {
+        ...(poll.voteCounts || {})
+    };
+
+    // Subtract the counts for the old votes, if the new votes after the user changes dont include that vote anymore
+    for (const option of prevVotes) {
+        if (voteCounts[option] !== undefined) {
+            voteCounts[option] = Math.max(0, voteCounts[option] - 1);
+        }
+    }
+
+    // Add the new vote counts to each of the options
+    for (const option of selectedOptions) {
+        voteCounts[option] = (voteCounts[option] || 0) + 1;
+    }
+
+    if (poll.allowMultipleVotes == false) {
+        if (selectedOptions.length > 1) {
+            console.log("Only one vote is allowed");
+
+            return null;
+        }
+    }
+
+    await updateDoc(pollRef, {
+        [`voters.${userID}`]: selectedOptions,
+        voteCounts,
+        lastVotedAt: serverTimestamp()
+    });
+}
+
+export const retrievePolls = (clanID, callback) => {
+    const pollRef = collection(db, "clan", clanID, "polls");
+    const unsubscribe = onSnapshot(pollRef, (snapshot) => {
+        const polls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(polls);
+    });
+
+
+    return unsubscribe;
+}
+
+export const deletePoll = async (pollID, clanID) => {
+    await deleteDoc(doc(db, "clan", clanID, "polls", pollID));
+}
+
+// Closes Poll to prevent any new votes for being cast for that poll
+export const closePoll = async (clanID, pollID) => {
+    const pollRef = doc(db, "clan", clanID, "polls", pollID);
+
+    await updateDoc(pollRef, {
+        isOpen: false,
+    });
+}
+
+export const subscribeToPoll = (pollID, clanID, callback) => {
+    const pollRef = doc(db, "clan", clanID, "polls", pollID);
+    return onSnapshot(pollRef, (snap) => {
+        if (snap.exists()) callback({ id: snap.id, ...snap.data() });
+    });
+};

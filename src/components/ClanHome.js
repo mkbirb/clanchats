@@ -6,6 +6,7 @@ import { ClanSlidesDefault } from "./definitions/ClanSlideDefault";
 import { getClanSlides } from "./firebaseConfig";
 import ClanAnnoucements from "./ClanAnnoucements";
 import LeaveClan from "./LeaveClan";
+import PollList from "./PollList";
 
 const ClanHome = ({clanData}) => {
     const [slides, setSlides] = useState(ClanSlidesDefault);
@@ -33,6 +34,7 @@ const ClanHome = ({clanData}) => {
             <img src={clanData.logo} alt="Clan Logo"/>
             <Slideshow images={slides}/>
             <ClanAnnoucements clanData={clanData} />
+            <PollList clanData={clanData} />
             <p> Description: </p>
             <p> {clanData.description}</p>
             <button onClick={() => {navigateTo(router, 'CLANCALENDER', clanData.id)}}> Calender </button>
