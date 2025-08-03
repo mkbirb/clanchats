@@ -7,6 +7,7 @@ import { getClanSlides } from "./firebaseConfig";
 import ClanAnnoucements from "./ClanAnnoucements";
 import LeaveClan from "./LeaveClan";
 import PollList from "./PollList";
+import ClanMembersOnline from "./ClanMembersOnline";
 
 const ClanHome = ({clanData}) => {
     const [slides, setSlides] = useState(ClanSlidesDefault);
@@ -37,6 +38,7 @@ const ClanHome = ({clanData}) => {
             <PollList clanData={clanData} />
             <p> Description: </p>
             <p> {clanData.description}</p>
+            <ClanMembersOnline clanData={clanData}/>
             <button onClick={() => {navigateTo(router, 'CLANCALENDER', clanData.id)}}> Calender </button>
             <button> Gallery </button>
             <button onClick={() => {navigateTo(router, 'CLANTIMETABLES', clanData.id)}}> Timetables </button>

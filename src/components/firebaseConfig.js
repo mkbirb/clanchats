@@ -1,9 +1,10 @@
-import { db, auth} from '../firebase';
+import { db, auth, rtdb} from '../firebase';
 import {collection, getDocs, getDoc, setDoc, doc, addDoc, serverTimestamp, query, orderBy, where, onSnapshot, deleteDoc, updateDoc, increment, arrayRemove, arrayUnion, Timestamp, startAfter, limit } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, getAuth, signInWithPopup, GoogleAuthProvider} from "firebase/auth";
 import { createServerSearchParamsForServerPage } from 'next/dist/server/request/search-params';
 import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
 import { levelDefinition, maxLevel } from './definitions/LevelDefinitions';
+import { child, off, onValue, ref } from 'firebase/database';
 
 // Used for User Caching
 const userCache = new Map();
@@ -1374,4 +1375,35 @@ export const subscribeToPoll = (pollID, clanID, callback) => {
     return onSnapshot(pollRef, (snap) => {
         if (snap.exists()) callback({ id: snap.id, ...snap.data() });
     });
+};
+
+export const listenToOnlineCountForClan = (clanMembersID, callback) => {
+    const statusRef = ref(rtdb, "/status");
+
+    console.log("we haveee", statusRef);
+
+    const handleValue = (snapshot) => {
+        console.log("status snapshot received");
+        let count = 0;
+
+        snapshot.forEach(child => {
+            const userID = child.key;
+            const { state } = child.val();
+
+            // Count Clan Members who are Online or Idle
+            if (clanMembersID.includes(userID) && (state === "online" || state === "idle")) {
+                count++;
+            }
+        });
+
+        console.log("count total:", count);
+
+        callback(count);
+    };
+
+    // Register the listener
+    const unsubscribe = onValue(statusRef, handleValue);
+
+    // Cleanup listener on unmount
+    return unsubscribe;
 };

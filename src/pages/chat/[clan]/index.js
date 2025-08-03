@@ -57,7 +57,6 @@ const chat = () => {
 
     return (
         <> 
-            <UserPresenceTracking />
             {
                 // Display once already fetched the Clan Data
                 clanData ? (

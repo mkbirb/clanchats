@@ -11,6 +11,8 @@ import Logout from "../components/Logout.js";
 import DashboardProfile from "../components/DashboardProfile.js";
 import UserSelector from "../components/UserSelector.js";
 import { UserPresenceTracking } from "../utils/userPresenceTracking.js";
+import buildClanIcon from '../images/clanBuildHammer.png';
+import Image from 'next/image';
 
 const dashboard = () => {
     const [displayCreateClanModal, setDisplayCreateClanModal] = useState(false);
@@ -99,14 +101,20 @@ const dashboard = () => {
     return (
         <>
             <UserPresenceTracking />
-            {user && user.username ? (
-            <h1 className="font-mono text-3xl font-bold text-blue-600"> Welcome {user.username}!!</h1>
-            ) : (
-            <p className="text-gray-500">Loading user...</p>
-            )}
             <DashboardProfile />
-            <button onClick={() => {setDisplayCreateClanModal(true)}}> Create Clan </button>
-
+            <DisplayMyClans />
+            <div className="place-content-center">
+                <div className="place-self-center bg-amber-500 rounded-2xl h-50 w-1/2 cursor-pointer grid grid-cols-2" onClick={() => {setDisplayCreateClanModal(true)}}>
+                    <div className="place-self-center">
+                        <Image src={buildClanIcon} alt="Build Clan Icon"/>
+                    </div>
+                    <div className="place-self-center text-center">
+                        <p className="text-white font-bold text-3xl !mb-2"> Create Clan </p>
+                        <p className="text-white text-xl"> Form your next Clan Group Chat </p>
+                        <p className="text-white font-bold text-6xl"> + </p>
+                    </div>
+                </div>
+            </div>
             <Modal 
                 isOpen={displayCreateClanModal}
                 onRequestClose={() => {setDisplayCreateClanModal(false)}}
@@ -152,7 +160,6 @@ const dashboard = () => {
                 </form>
                 <button onClick={() => {setDisplayCreateClanModal(false)}}> Cancel </button>
             </Modal>
-            <DisplayMyClans />
             <Logout />
         </>
     )
