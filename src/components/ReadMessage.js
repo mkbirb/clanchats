@@ -15,6 +15,7 @@ import { messageDeliveryTracking, messageSeenTracking } from "../utils/messageTr
 import useSeenMessages from "../customHooks/useSeenMessages.js";
 import SeenIcon from "./SeenIcon.js";
 import PresenceDisplay from "./PresenceDisplay.js";
+import YoutubeEmbed from "./YoutubeEmbed.js";
 
 
 const ReadMessage = () => {
@@ -241,8 +242,8 @@ const renderMessageWithCustomEmojis = (text) => {
                 <p> Looks like this a new Chat, send the first message!</p>
               </>
             ): (
-                messages.map((message, index) => (
-                <li key={index}>  
+                messages.map((message) => (
+                <li key={message.id}>  
                   <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
                   <p> {messageUsername[message.userID]} </p>
                   <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
@@ -268,6 +269,7 @@ const renderMessageWithCustomEmojis = (text) => {
                   ) : (
                     <div id={`message-${message.id}`} data-id={`${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
                       {renderMessageWithCustomEmojis(message.text)} 
+                      <YoutubeEmbed textMessage={message.text} />
                       {/* {console.log("Rendering message ID:", message.id)}
                       {console.log("Last seen message ID:", lastSeenMessageID)} */}
                       <SeenIcon 

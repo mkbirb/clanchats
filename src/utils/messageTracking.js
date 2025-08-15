@@ -1,4 +1,4 @@
-import { onSnapshot, writeBatch, arrayUnion, doc, query, collection, serverTimestamp } from "firebase/firestore";
+import { onSnapshot, writeBatch, arrayUnion, doc, query, collection, serverTimestamp, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 // Keeps track of the Messages being Delivered to the Recipient
@@ -36,8 +36,9 @@ export async function messageSeenTracking(messages, currentUserID, roomID) {
     // Do all or nothing update
     const batch = writeBatch(db);
 
-
-    unseenMessages.forEach((msg, index) => {
+    for (const msg of unseenMessages) {
+        if (!msg?.id) continue;
+        
         if (!msg) {
             console.error(`Message at index ${index} is undefined or null`, msg);
             return;
@@ -58,15 +59,31 @@ export async function messageSeenTracking(messages, currentUserID, roomID) {
             return;
         }
 
+        const messageRef = doc(db, "rooms", roomID, "messages", msg.id);
+
+        // Check if the Message is still there to SeenTrack
         try {
-            const messageRef = doc(db, "rooms", roomID, "messages", msg.id);
+            const snap = await getDoc(messageRef);
+
+            if (!snap.exists()) {
+                console.log("Message deleted, skipping seen update:", msg.id);
+                continue;
+            }
+            
             batch.update(messageRef, {
                 [`seenBy.${currentUserID}`]: serverTimestamp(),
             });
-        } catch (err) {
-            console.error(`Error creating document reference or updating batch for msg ID: ${msg.id}`, err);
         }
-    });
+        catch (error) {
+            console.error("Error processing message for Message Seen Tracking:", msg.id, error);
+        }
 
-    await batch.commit();
+    }
+
+    try {
+        await batch.commit();
+    }
+    catch (error) {
+        console.error("Batch commit failed:", error);
+    }
 }

@@ -54,7 +54,7 @@ const PresenceDisplay = ({userID}) => {
         presence: presenceFromRTDB
     });
 
-    console.log("RTDB presence:", presenceFromRTDB);
+    // console.log("RTDB presence:", presenceFromRTDB);
 
     return (
         <>
