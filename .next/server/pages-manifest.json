@@ -4,5 +4,5 @@
   "/_document": "pages/_document.js",
   "/dashboard": "pages/dashboard.js",
   "/chat/[clan]": "pages/chat/[clan].js",
-  "/login": "pages/login.js"
+  "/chat/[clan]/memoryBoard": "pages/chat/[clan]/memoryBoard.js"
 }

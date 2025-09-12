@@ -11,6 +11,7 @@ export const Routes = {
     CLANCALENDER: (clan) => `/chat/${clan}/calender`,
     CLANTIMETABLES: (clan) => `/chat/${clan}/timetables`,
     SPECIFICTIMETABLE: (clan, timetableID) => `/chat/${clan}/timetables/${timetableID}`,
+    MEMORYBOARD: (clan) => `/chat/${clan}/memoryBoard`,
 }
 
 export const navigateTo = (router, route, ...params) => {

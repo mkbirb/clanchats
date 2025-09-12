@@ -1407,3 +1407,35 @@ export const listenToOnlineCountForClan = (clanMembersID, callback) => {
     // Cleanup listener on unmount
     return unsubscribe;
 };
+
+export const saveMemoryBoard = (clanID, user, boardID, elements, appState, files) => {
+    const memoryBoard = doc(db, "clan", clanID, "memoryboards", boardID);
+    console.log("clanID", clanID);
+    console.log("boardid", boardID);
+    console.log("user", user);
+
+    // Store the contents of the Memory Board as a String
+    setDoc(memoryBoard, {
+        elements: JSON.stringify(elements ?? []), 
+        appState: JSON.stringify(appState ?? {}),
+        files: JSON.stringify(files ?? {}),
+        updatedAt: serverTimestamp(),
+        updatedBy: user?.uid || null,
+    });
+}
+
+export const loadMemoryBoard = async (clanID, boardID) => {
+  const memoryBoard = doc(db, "clan", clanID, "memoryboards", boardID);
+  const snapshot = await getDoc(memoryBoard);
+
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+
+    // Revert back the contents of the Memory Board
+    const elements = JSON.parse(data.elements);  
+    const appState = JSON.parse(data.appState);
+    const files = JSON.parse(data.files);
+
+    return { elements, appState, files };
+  }
+};
