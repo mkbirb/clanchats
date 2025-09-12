@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { loadMemoryBoard, saveMemoryBoard } from "../../../components/firebaseConfig";
 import { useCurrentUser } from "../../../context/CurrentUserContext";
 import { useRouter } from "next/router";
+import ToClanHome from "../../../components/ToClanHome";
 
 const Excalidraw = dynamic(
   async () => (await import("@excalidraw/excalidraw")).Excalidraw,
@@ -23,17 +24,59 @@ const MemoryBoard = ({boardId = "default-board"}) => {
   let latestScene = useRef({ elements: [], appState: {}, files: {} });
   const [initialData, setInitialData] = useState(null);
 
+  // A Board is Dirty if it is Edited but has not been saved.
+  const [isDirty, setIsDirty] = useState(false);
+  const lastSavedScene = useRef(null);
+
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
+    if (!clan || !boardId) return;
     // Only render after client mount
     setMounted(true);
 
     loadBoard();
-  }, [boardId]);
+  }, [clan, boardId]);
+
+  // Provide warning if the Board is Dirty (I.e edited but not saved) and User reloads or leaves tab
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!isDirty) return;
+
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty])
+
+  // Provides warning user navigates away from page
+  useEffect(() => {
+    const handleRouteChange = (url) => {
+      if (isDirty && !confirm("You have unsaved changes. Are you sure you want to leave?")) {
+        // Cancel navigation by stopping the Router
+        throw "Route change aborted by user"; 
+      }
+    }
+
+    router.events.on("routeChangeStart", handleRouteChange);
+
+    return () => {
+      router.events.off("routeChangeStart", handleRouteChange);
+    };
+  }, [isDirty]);
 
   const loadBoard = async () => {
     try {
-      const { elements, appState = {}, files = {} } = await loadMemoryBoard(clan, boardId);
+      const boardData = await loadMemoryBoard(clan, boardId);
+
+      // If board not exists yet, use Empty Defaults
+      const {
+        elements = [],
+        appState = {},
+        files = {},
+      } = boardData || {};
 
       // Ensure the Collaborators exist, so we do not get undefined
       const safeAppState = {
@@ -43,10 +86,33 @@ const MemoryBoard = ({boardId = "default-board"}) => {
 
       setInitialData({ elements, appState: safeAppState, files });
       latestScene.current = { elements, appState: safeAppState, files };
+      lastSavedScene.current = JSON.parse(JSON.stringify(latestScene.current));
     } 
     catch (error) {
       console.log("Could not Load Memory Board", error);
     }
+  }
+
+  // Checks whether or not the Board has been edited and not saved
+  const handleChange = (elements, appState) => {
+    latestScene.current.elements = elements;
+    latestScene.current.appState = appState;
+    
+    // Compare with last saved scene
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+
+    // Ignore seeing the change, until  the current last saved scene exists
+    if (!lastSavedScene.current) return;
+
+    // Dirty if the Elements and AppState from Exaclidraw are not the same as the latest saved scene!
+    const dirty =
+      JSON.stringify(latestScene.current.elements) !== JSON.stringify(lastSavedScene.current.elements) ||
+      JSON.stringify(latestScene.current.appState) !== JSON.stringify(lastSavedScene.current.appState);
+
+    setIsDirty(dirty);
   }
 
 
@@ -66,6 +132,11 @@ const MemoryBoard = ({boardId = "default-board"}) => {
           JSON.parse(JSON.stringify(appState)),
           JSON.parse(JSON.stringify(files))
         );
+        
+        // Update the Lastest Saved Scene after the Saving has been done
+        lastSavedScene.current = JSON.parse(JSON.stringify(latestScene.current));
+        setIsDirty(false);
+        isInitialLoad.current = true;
       }
       catch (error) {
         console.log("Could not save Memory Board", error);
@@ -73,22 +144,25 @@ const MemoryBoard = ({boardId = "default-board"}) => {
     }
   }
 
+  const handleFileChange = (files) => {
+    latestScene.current.files = files;
+    setIsDirty(true); 
+  };
+
   return (
     <>
+      <ToClanHome />
       <p>Memory Board</p>
-      {mounted && 
+      {mounted && initialData &&
         (
             <>
                 <div style={{ width: "800px", height: "600px", border: "1px solid #ccc" }}>
                 <Excalidraw
+                  key={`${clan}-${boardId}`} 
                   ref={excalidrawRef}
                   initialData={initialData}
-                  onChange={(elements, appState) => {
-                    latestScene.current = { elements, appState, files: latestScene.current.files };
-                  }}
-                  onFileChange={(files) => {
-                    latestScene.current.files = files;
-                  }}
+                  onChange={handleChange}
+                  onFileChange={handleFileChange}
                 />
                 </div>
                 <button onClick={handleSave}>Save Board</button>
