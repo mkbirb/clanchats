@@ -29,6 +29,7 @@ const MemoryBoard = ({boardId = "default-board"}) => {
   const lastSavedScene = useRef(null);
 
   const isInitialLoad = useRef(true);
+  const isNewBoard = useRef(true);
 
   useEffect(() => {
     if (!clan || !boardId) return;
@@ -86,7 +87,11 @@ const MemoryBoard = ({boardId = "default-board"}) => {
 
       setInitialData({ elements, appState: safeAppState, files });
       latestScene.current = { elements, appState: safeAppState, files };
-      lastSavedScene.current = JSON.parse(JSON.stringify(latestScene.current));
+      // Still treat the Board as clean, until the user actually edits the board
+      lastSavedScene.current = boardData ? JSON.parse(JSON.stringify(latestScene.current)) : null;
+
+      // New Board if Board is not saved in Database yet
+      isNewBoard.current = !boardData;
     } 
     catch (error) {
       console.log("Could not Load Memory Board", error);
@@ -97,10 +102,16 @@ const MemoryBoard = ({boardId = "default-board"}) => {
   const handleChange = (elements, appState) => {
     latestScene.current.elements = elements;
     latestScene.current.appState = appState;
-    
-    // Compare with last saved scene
+
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
+      return;
+    }
+    
+    // Consider dirty ONLY if user actually drew something
+    if (!lastSavedScene.current) {
+      const hasUserContent = elements.some(el => el.type !== "viewport"); // ignore viewport metadata
+      setIsDirty(hasUserContent);
       return;
     }
 
@@ -137,6 +148,7 @@ const MemoryBoard = ({boardId = "default-board"}) => {
         lastSavedScene.current = JSON.parse(JSON.stringify(latestScene.current));
         setIsDirty(false);
         isInitialLoad.current = true;
+        isNewBoard.current = false;
       }
       catch (error) {
         console.log("Could not save Memory Board", error);
