@@ -9,6 +9,7 @@ import { uploadImageToImgBB } from "../utils/imageUpload";
 import useImagePreview from "../customHooks/useImagePreview";
 import editIcon from '../images/editIcon.png';
 import Image from 'next/image';
+import MusicStatusSearch from "./musicStatus";
 
 const DashboardProfile = () => {
     const { userID } = useCurrentUser(); 
@@ -179,6 +180,7 @@ const DashboardProfile = () => {
                 isOpen={displayChangeWordStatus}
                 onRequestClose={() => {setDisplayChangeWordStatus(false)}}
             >
+                <MusicStatusSearch userID={userID}/>
                 <p> Your Status: </p>
                 <form onSubmit={handleWordStatus}>
                     <input value={tempWordStatus}  onChange={(e) => setTempWordStatus(e.target.value)}></input>

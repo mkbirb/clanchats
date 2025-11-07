@@ -1439,3 +1439,8 @@ export const loadMemoryBoard = async (clanID, boardID) => {
     return { elements, appState, files };
   }
 };
+
+export const spotifySearchTracks = async (track, userID) => {
+    await setDoc(doc(db, "users", userID), { musicStatus: track }, { merge: true });
+    alert(`Music status set: ${track.name} — ${track.artist}`);
+}

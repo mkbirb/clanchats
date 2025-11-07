@@ -2,7 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/api/presence-update": "pages/api/presence-update.js",
   "/dashboard": "pages/dashboard.js",
-  "/chat/[clan]": "pages/chat/[clan].js",
-  "/chat/[clan]/memoryBoard": "pages/chat/[clan]/memoryBoard.js"
+  "/api/spotify/search": "pages/api/spotify/search.js"
 }
