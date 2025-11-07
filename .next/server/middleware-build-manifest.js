@@ -20,11 +20,6 @@ globalThis.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/chat/[clan]": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/chat/[clan].js"
-    ],
     "/chat/[clan]/timetables": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
@@ -34,11 +29,6 @@ globalThis.__BUILD_MANIFEST = {
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/chat/[clan]/timetables/[timetableID].js"
-    ],
-    "/dashboard": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/dashboard.js"
     ]
   },
   "ampFirstPages": []

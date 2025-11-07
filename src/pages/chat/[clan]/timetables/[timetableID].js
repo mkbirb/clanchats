@@ -117,6 +117,7 @@ const Timetable = () => {
 
     // For the Draggable Elements
     const handleDragEnd = ({ active, over }) => {
+        // Stops dragging and checks if element dropped in valid place
         setIsDragging(false);
         if (!over) {
             setActiveTaskId(null);
@@ -138,6 +139,18 @@ const Timetable = () => {
             
             const timeslotId = over?.id;
             console.log("fun ", timeslotId);
+
+            // If the Task is dropped back into the Reusable Task list after already existing on timetable, then delete
+            if (timeslotId === "reusable-task-list") { 
+                setTasksWithOverrides((tasks) => 
+                    tasks.filter((t) => t.id !== draggedTask.id)
+                );
+                setActiveTaskId(null);
+
+                return;
+            } 
+
+            // Checks if the element is dropped into a valid time slot
             if (typeof timeslotId === "string" && timeSlots.includes(timeslotId)) {
                 console.log("wakeup");
 
@@ -177,6 +190,11 @@ const Timetable = () => {
         setActiveTaskId(null);
     };
 
+    // Removes the Task, if it has already been added to the Timetable Grid
+    const removeTask = (id) => {
+        setTasksWithOverrides((prev) => prev.filter((t) => t.id !== id));
+    }
+
 
     // The place where the Tasks can be placed in, like the Timeslots
     const DroppableSlot = ({ slot, tasks, isDragging, isActive }) => {
@@ -201,6 +219,7 @@ const Timetable = () => {
                             task={task}
                             // Longer events take more slots
                             slotsTaken={Math.ceil(task.duration / 15)}
+                            removeTask={removeTask}
                         />
                     )
                 ))}
@@ -285,7 +304,7 @@ const Timetable = () => {
                         </div>
                     );
                 })}
-                <ReusableTaskList clanID={clan}/>
+                <ReusableTaskList clanID={clan} taskListDivid="reusable-task-list"/>
                 {/* // Creates visual copy of the task being cloned/dragged */}
                 <DragOverlay>
                   {activeTask ? <SortableTask task={activeTask} /> : null}

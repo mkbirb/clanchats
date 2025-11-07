@@ -2,7 +2,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const SortableTask = ({ task, slotsTaken }) => {
+const SortableTask = ({ task, slotsTaken, removeTask}) => {
   const height = 50 * slotsTaken;
   const {
     attributes,
@@ -34,8 +34,15 @@ const SortableTask = ({ task, slotsTaken }) => {
       }`}
     >
       <div {...attributes} {...listeners} className="cursor-grab bg-amber-400 p-2 h-full">
-        <p>{task.title || "Unnamed Task"}</p>
-        <p>{task.duration}</p>
+        <div className="grid grid-cols-2">
+          <div>
+            <p>{task.title || "Unnamed Task"}</p>
+            <p>{task.duration}</p>
+          </div>
+          <div>
+            <button onClick={() => removeTask(task.id)}> Remove </button>
+          </div>
+        </div>
       </div>
     </div>
   );

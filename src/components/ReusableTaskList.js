@@ -11,6 +11,7 @@ import {
   useSensors,
   DragOverlay,
   useDraggable,
+  useDroppable,
 } from "@dnd-kit/core";
 import { 
   arrayMove, 
@@ -20,8 +21,13 @@ import {
 } from "@dnd-kit/sortable";
 import SortableTask from "./SortableTask";
 
-const ReusableTaskList = ({clanID}) => {
+const ReusableTaskList = ({clanID, taskListDivid}) => {
     const [reusableTasks, setReusableTasks] = useState([]);
+
+    const { setNodeRef, isOver } = useDroppable({
+        id: taskListDivid,
+    });
+
 
     const fetchReusableTasks = async () => {
         try {
@@ -93,13 +99,15 @@ const ReusableTaskList = ({clanID}) => {
 
     return (
         <>
-            <p> Reusable Task List</p>
-            {reusableTasks.length === 0 ?
-                <p> Theres no Reusable Tasks yet </p> :
-                <ul>
-                    {reusableTasks.map(task => <DraggableTask key={task.id} task={task} />)}
-                </ul>
-            }
+            <div id={taskListDivid} ref={setNodeRef}>
+                <p> Reusable Task List</p>
+                {reusableTasks.length === 0 ?
+                    <p> Theres no Reusable Tasks yet </p> :
+                    <ul>
+                        {reusableTasks.map(task => <DraggableTask key={task.id} task={task} />)}
+                    </ul>
+                }
+            </div>
         </>
     )
 }
