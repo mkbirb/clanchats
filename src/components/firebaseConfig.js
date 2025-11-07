@@ -1444,3 +1444,20 @@ export const spotifySearchTracks = async (track, userID) => {
     await setDoc(doc(db, "users", userID), { musicStatus: track }, { merge: true });
     alert(`Music status set: ${track.name} — ${track.artist}`);
 }
+
+export const listenToMusicStatus = (userID, callback) => {
+    // Allows user to listen to Spotify Music Status
+    if (!userID) return () => {};
+
+    const docRef = doc(db, "users", userID);
+
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            callback(docSnap.data().musicStatus || null);
+        } else {
+            callback(null);
+        }
+    });
+
+    return unsubscribe;
+}
