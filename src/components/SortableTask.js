@@ -1,8 +1,20 @@
 // For the Task in a Clan Timetable
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import TimetableTaskModal from "./TimetableTaskModal";
+import { useState } from "react";
 
 const SortableTask = ({ task, slotsTaken, removeTask}) => {
+
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  const openTaskModal = (task) => {
+      setSelectedTask(task);
+      setIsTaskModalOpen(true);
+  };
+
+
   const height = 50 * slotsTaken;
   const {
     attributes,
@@ -41,8 +53,14 @@ const SortableTask = ({ task, slotsTaken, removeTask}) => {
           </div>
           <div>
             <button onClick={() => removeTask(task.id)}> Remove </button>
+            <button onClick={() => openTaskModal(task)}>View Details</button>
           </div>
         </div>
+
+        <TimetableTaskModal
+          task={selectedTask}
+          isOpen={isTaskModalOpen}
+          onClose={() => setIsTaskModalOpen(false)} />
       </div>
     </div>
   );

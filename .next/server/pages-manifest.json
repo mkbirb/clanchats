@@ -2,7 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/chat/[clan]": "pages/chat/[clan].js",
   "/chat/[clan]/timetables": "pages/chat/[clan]/timetables.js",
   "/chat/[clan]/timetables/[timetableID]": "pages/chat/[clan]/timetables/[timetableID].js",
-  "/chat/[clan]": "pages/chat/[clan].js"
+  "/dashboard": "pages/dashboard.js"
 }

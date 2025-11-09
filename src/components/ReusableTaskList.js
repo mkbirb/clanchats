@@ -20,9 +20,17 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import SortableTask from "./SortableTask";
+import TimetableTaskModal from "./TimetableTaskModal";
 
 const ReusableTaskList = ({clanID, taskListDivid}) => {
     const [reusableTasks, setReusableTasks] = useState([]);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+    const openTaskModal = (task) => {
+        setSelectedTask(task);
+        setIsTaskModalOpen(true);
+    };
 
     const { setNodeRef, isOver } = useDroppable({
         id: taskListDivid,
@@ -90,10 +98,18 @@ const ReusableTaskList = ({clanID, taskListDivid}) => {
         };
 
         return (
-            <li ref={setNodeRef} {...listeners} {...attributes} style={style}>
-                {task.title || 'Unnamed Task'}
-                {task.duration}
-            </li>
+            <>
+                <li ref={setNodeRef} {...listeners} {...attributes} style={style}>
+                    {task.title || 'Unnamed Task'}
+                    {task.duration}
+                    <button onClick={() => openTaskModal(task)}>View Details</button>
+                </li>
+                <TimetableTaskModal
+                        task={selectedTask}
+                        isOpen={isTaskModalOpen}
+                        onClose={() => setIsTaskModalOpen(false)} />
+            </>
+
         );
     };
 
