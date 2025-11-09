@@ -115,6 +115,15 @@ const Timetable = () => {
         setIsDragging(true);
     };
 
+    // Helper function that gets all of the slots that are occupied by a task
+    const getSlotsCoveredByTask = (task, timeSlots) => {
+        const startIndex = timeSlots.indexOf(task.timeSlot);
+
+        if (startIndex === -1 ) return [];
+
+        return timeSlots.slice(startIndex, startIndex + (task.duration || 1));
+    }
+
     // For the Draggable Elements
     const handleDragEnd = ({ active, over }) => {
         // Stops dragging and checks if element dropped in valid place
@@ -153,14 +162,21 @@ const Timetable = () => {
             // Checks if the element is dropped into a valid time slot
             if (typeof timeslotId === "string" && timeSlots.includes(timeslotId)) {
                 console.log("wakeup");
+                
+                setTasksWithOverrides((prev) => {
+                    const updatedTask = {...draggedTask, timeSlot: timeslotId};
+                    const coveredSlots = getSlotsCoveredByTask(updatedTask, timeSlots);
 
-                if (draggedTask.timeSlot !== timeslotId) {
-                    setTasksWithOverrides(tasks =>
-                        tasks.map(t =>
-                            t.id === draggedTask.id ? { ...t, timeSlot: timeslotId } : t
-                        )
-                    );
-                }
+                    // Remove any task that currently occupies the timeslot
+                    const withoutConflicts = prev.filter(
+                        (t) => {
+                            t.id !== draggedTask.id &&
+                            !coveredSlots.includes(t.timeSlot)
+                        }
+                    )
+                    return [...withoutConflicts, updatedTask]
+                })
+                
             } 
             else {
                 // For the Reordering inside the same slot
@@ -180,11 +196,27 @@ const Timetable = () => {
             timeSlots.includes(over.id)
         ) 
         {
-            // Add new task at dropped time slot, from the Reusable Task List for example
-            const generateUniqueID = () => "_" + Math.random().toString(36).substr(2, 9);
-            const newTask = { ...draggedTask, id: generateUniqueID(), timeSlot: over.id };
-            setTasksWithOverrides(prev => [...prev, newTask]);
-            console.log("bigbig");
+            const timeslotId = over?.id;
+            setTasksWithOverrides((prev) => {
+                // Remove existing task that already occupies the spot
+                const withoutOld = prev.filter((t) => t.timeSlot !== timeslotId);
+
+                console.log("Trying to remove existing task that occupies the spot");
+
+                // Add new task at dropped time slot, from the Reusable Task List for example
+                const generateUniqueID = () => "_" + Math.random().toString(36).substr(2, 9);
+                const newTask = { ...draggedTask, id: generateUniqueID(), timeSlot: over.id };
+
+                const coveredSlots = getSlotsCoveredByTask(newTask, timeSlots);
+
+                // Stores the new tasks that have been replaced by teh enwly dragged task
+                const withoutConflicts = prev.filter(
+                    (t) => !coveredSlots.includes(t.timeSlot)
+                );
+
+                return [...withoutConflicts, newTask];
+            })
+
         }
 
         setActiveTaskId(null);
