@@ -125,12 +125,15 @@ const Timetable = () => {
     };
 
     // Helper function that gets all of the slots that are occupied by a task
-    const getSlotsCoveredByTask = (task, timeSlots) => {
+    const getSlotsCoveredByTask = (task, timeSlots, slotIntervalMinutes = 15) => {
         const startIndex = timeSlots.indexOf(task.timeSlot);
+        if (startIndex === -1) return [];
 
-        if (startIndex === -1 ) return [];
+        // Determine how many slots this task occupies
+        const slotCount = Math.ceil(task.duration/ slotIntervalMinutes);
 
-        return timeSlots.slice(startIndex, startIndex + (task.duration || 1));
+        // Return only the slots within the timetable bounds
+        return timeSlots.slice(startIndex, startIndex + slotCount);
     }
 
     // For the Draggable Elements
@@ -175,13 +178,14 @@ const Timetable = () => {
                 setTasksWithOverrides((prev) => {
                     const updatedTask = {...draggedTask, timeSlot: timeslotId};
                     const coveredSlots = getSlotsCoveredByTask(updatedTask, timeSlots);
+                    console.log("The Covered Slots of the Task: ", coveredSlots)
 
                     // Remove any task that currently occupies the timeslot
                     const withoutConflicts = prev.filter(
-                        (t) => {
+                        (t) => (
                             t.id !== draggedTask.id &&
                             !coveredSlots.includes(t.timeSlot)
-                        }
+                        )
                     )
                     return [...withoutConflicts, updatedTask]
                 })
@@ -203,29 +207,27 @@ const Timetable = () => {
             dragType === "reusable-task" &&
             typeof over.id === "string" &&
             timeSlots.includes(over.id)
-        ) 
-        {
-            const timeslotId = over?.id;
-            setTasksWithOverrides((prev) => {
-                // Remove existing task that already occupies the spot
-                const withoutOld = prev.filter((t) => t.timeSlot !== timeslotId);
+        ) {
+            const timeslotId = over.id;
 
-                console.log("Trying to remove existing task that occupies the spot");
-
-                // Add new task at dropped time slot, from the Reusable Task List for example
+            setTasksWithOverrides(prev => {
                 const generateUniqueID = () => "_" + Math.random().toString(36).substr(2, 9);
-                const newTask = { ...draggedTask, id: generateUniqueID(), timeSlot: over.id };
+                const updatedTask = {...draggedTask, timeSlot: timeslotId};
+                const coveredSlots = getSlotsCoveredByTask(updatedTask, timeSlots);
 
-                const coveredSlots = getSlotsCoveredByTask(newTask, timeSlots);
+                const newTask = {
+                    ...draggedTask,
+                    id: generateUniqueID(),
+                    timeSlot: timeslotId
+                };
 
-                // Stores the new tasks that have been replaced by teh enwly dragged task
-                const withoutConflicts = prev.filter(
-                    (t) => !coveredSlots.includes(t.timeSlot)
-                );
+                // Only remove tasks whose starting slot is exactly the same as new task's start
+                const withoutConflicts = prev.filter(t => 
+                            t.timeSlot !== newTask.timeSlot &&
+                            !coveredSlots.includes(t.timeSlot));
 
                 return [...withoutConflicts, newTask];
-            })
-
+            });
         }
 
         setActiveTaskId(null);
