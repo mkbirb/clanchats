@@ -20,6 +20,7 @@ import { retrieveClanTimetable } from "../../../../components/firebaseConfig";
 import { useRouter } from "next/router";
 import ReusableTaskList from "../../../../components/ReusableTaskList";
 import SortableTask from "../../../../components/SortableTask";
+import TimetableShare from "../../../../components/TimetableShare";
 
 const Timetable = () => {
     const [timetable, setTimetable] = useState(null);
@@ -33,8 +34,16 @@ const Timetable = () => {
     // To help identify the place that the Task is being moved too
     const [activeDroppableId, setActiveDroppableId] = useState(null);
 
+
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
     const router = useRouter();
     const { clan, timetableID } = router.query;
+
+    const openShareModal = () => {
+      setIsShareModalOpen(true);
+    };
+
 
     const fetchTimetable = async () => {
         try {
@@ -278,7 +287,12 @@ const Timetable = () => {
             <p> Timetable </p>
             <p> {timetable.title} </p>
             <p> From {timetable.startTime} to {timetable.endTime} </p>
-
+            <button onClick={() => openShareModal()}> Share Timetable </button>
+            <TimetableShare
+                timetable={timetable}
+                timetableTasks={tasksWithOverrides}
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)} />
             <DndContext
                 sensors={sensors}
                 collisionDetection={customCollisionDetection}
