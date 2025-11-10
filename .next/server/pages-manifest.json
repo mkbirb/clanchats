@@ -4,6 +4,5 @@
   "/_document": "pages/_document.js",
   "/chat/[clan]": "pages/chat/[clan].js",
   "/chat/[clan]/timetables/[timetableID]": "pages/chat/[clan]/timetables/[timetableID].js",
-  "/dashboard": "pages/dashboard.js",
   "/chat/[clan]/timetables": "pages/chat/[clan]/timetables.js"
 }

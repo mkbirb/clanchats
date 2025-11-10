@@ -7,7 +7,7 @@ const CreateTimetable = ({clanID}) => {
     const [date, setDate] = useState();
     const [startTime, setStartTime] = useState();
     const [endTime, setEndTime] = useState();
-    const [bringItems, setBringItems] = useState("");
+    const [bringItems, setBringItems] = useState([""]);
     const [price, setPrice] = useState();
     const [additionalNotes, setAdditionalNotes] = useState("");
 
@@ -20,6 +20,22 @@ const CreateTimetable = ({clanID}) => {
             console.log("Unable to Create Timetable ", error);
         }
     }
+
+    // Updates the Item List if they have been changed
+    const handleItemsChange = (index, value) => {
+        const newItems = [...bringItems]
+        newItems[index] = value;
+        setBringItems(newItems);
+    }
+
+    const addItem = () => {
+        setBringItems([...bringItems, ""]);
+    }
+
+    const removeItem = (index) => {
+        setBringItems(bringItems.filter((_, i) => i !== index));
+    }
+
     return (
         <>
             <p> Create Timetable </p>
@@ -32,7 +48,17 @@ const CreateTimetable = ({clanID}) => {
                 <label htmlFor="endTime"> End Time </label>
                 <input id="endTime" type="time" onChange={(e) =>setEndTime(e.target.value)}/>
                 <input type="text" placeholder="Price" onChange={(e) =>setPrice(e.target.value)}/>
-                <input type="text" placeholder="Items to bring by participants" onChange={(e) =>setBringItems(e.target.value)}/>
+                {bringItems.map((item, index) => (
+                    <div key={index}>
+                        <input 
+                            type="text" 
+                            placeholder={`Item ${index + 1}`}
+                            value={item} 
+                            onChange={(e) => handleItemsChange(index, e.target.value)}/>
+                        <button type="button" onClick={() => removeItem(index)}> Remove </button>
+                    </div>
+                ))}
+                <button type="button" onClick={addItem}> Add more Items </button>
                 <input type="text" placeholder="Additional Notes" onChange={(e) =>setAdditionalNotes(e.target.value)}/>
                 <input type="submit" />
             </form>

@@ -42,7 +42,7 @@ const TimetableShare = ({timetable, timetableTasks, isOpen, onClose}) => {
             const timeTableDate = timetable.date || "Unknown Date";
             const formattedDate = getFormattedDate(timeTableDate);
             const timeTablePrice = timetable.price || "Unknown Price";
-            const timeTableMaterials = timetable.materials || "Unknown Materials";
+            const timeTableMaterials = Array.isArray(timetable.bringItems) ? timetable.bringItems : [];
             const timeTableNotes = timetable.additionalNotes || "No Additional Notes";
 
             // Add the Task Text
@@ -59,12 +59,23 @@ const TimetableShare = ({timetable, timetableTasks, isOpen, onClose}) => {
                 return ` ${emojiNumber} **${title}: ${startTime} to ${endTime}**\n *Duration: ${formattedDuration}*\n ▶️ ${desc}\n `;
             }).join("\n");
 
+            // Add the Material Text
+            let materialsList = "";
+            
+            if (timeTableMaterials && timeTableMaterials.length > 0) {
+                materialsList = timeTableMaterials.map((item, index) => `👉 ${item}`)
+                .join("\n");
+            }
+            else {
+                materialsList = "Just bring yourself 😉 \n"
+            }
+
             // Add the Timetable Text as well
             const fullText = [
                 `**${timeTableTitle}**\n`,
                 `DATE: ${formattedDate} \n`,
                 `Price: \n$${timeTablePrice} \n`,
-                `Materials to Bring: \n ${timeTableMaterials} \n`,
+                `Materials to Bring: \n${materialsList}\n`,
                 `Additional Notes: \n ${timeTableNotes} \n`,
                 `**🗓️ TIMETABLE:** \n`,
                 timetableText,
