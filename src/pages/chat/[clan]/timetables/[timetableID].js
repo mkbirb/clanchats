@@ -16,11 +16,12 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { arrayMove } from '@dnd-kit/sortable';
-import { retrieveClanTimetable } from "../../../../components/firebaseConfig";
+import { getTimetableTasks, retrieveClanTimetable, saveTimetableTasks } from "../../../../components/firebaseConfig";
 import { useRouter } from "next/router";
 import ReusableTaskList from "../../../../components/ReusableTaskList";
 import SortableTask from "../../../../components/SortableTask";
 import TimetableShare from "../../../../components/TimetableShare";
+import { navigateTo } from "../../../../components/Routes";
 
 const Timetable = () => {
     const [timetable, setTimetable] = useState(null);
@@ -36,6 +37,8 @@ const Timetable = () => {
 
 
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     const router = useRouter();
     const { clan, timetableID } = router.query;
@@ -56,9 +59,79 @@ const Timetable = () => {
         }
     }
 
+    // Gets the Timetable Tasks from the Database
+    const fetchTasks = async () => {
+        try {
+            const tasks = await getTimetableTasks(timetableID, clan);
+            setTasksWithOverrides(tasks);
+        }
+        catch (error) {
+            console.log("Cannot fetch the Timetable Tasks ", error);
+        }
+    }
+
+    // Warn on Unsaved when Browser Refresh and Tab Close
     useEffect(() => {
+        const handleBeforeUnload =  (event) => {
+            if (hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = "";
+            }
+        };
+
+        // Add Listener
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        // Cleanup the Listener
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [hasUnsavedChanges]);
+
+
+    // Warn on Unsaved during Internal Navigation
+    useEffect(() => {
+        const handleRouteChange = (url) => {
+            if (hasUnsavedChanges && !window.confirm("You have unsaved changes. Leave anyway?")) {
+                router.events.emit("routeChangeError");
+                throw "Abort route change. Please ignore this error.";
+            }
+        };
+
+        // Shows the Window Dialog
+        router.events.on("routeChangeStart", handleRouteChange);
+
+        return () => {
+            router.events.off("routeChangeStart", handleRouteChange);
+        };
+        
+    }, [hasUnsavedChanges])
+
+    useEffect(() => {
+        if (!timetableID) return;
+
         fetchTimetable();
-    }, [])
+        fetchTasks();
+    }, [timetableID])
+
+    const handleSave = async () => {
+        if (!timetableID) {
+            console.error("Missing Timetable ID");
+
+            return;
+        }
+
+        try {
+            await saveTimetableTasks(timetableID, clan, tasksWithOverrides);
+            alert("Timetable Saved Successfully");
+            setHasUnsavedChanges(false);
+        }
+        catch (error) {
+            console.log("Cannot save Timetable Tasks ", error);
+            alert("Cannot save Timetable");
+        }
+    }
+
 
     // Allows for the Time Intervals to be displayed
     const generateTimeSlots = (startHour = 0, endHour = 24, timeInterval = 15) => {
@@ -76,9 +149,6 @@ const Timetable = () => {
 
     const timeSlots = generateTimeSlots();
 
-    const saveReorderedTasks = () => {
-
-    }
 
     const { grouped: groupedTasks, occupiedSlots } = useMemo(() => {
     const grouped = {};
@@ -155,6 +225,9 @@ const Timetable = () => {
             setActiveTaskId(null);
             return;
         }
+        
+        // Checks if there is a new action that has not been saved yet
+        setHasUnsavedChanges(true);
 
         if (dragType === "scheduled-task") {
             
@@ -236,6 +309,7 @@ const Timetable = () => {
     // Removes the Task, if it has already been added to the Timetable Grid
     const removeTask = (id) => {
         setTasksWithOverrides((prev) => prev.filter((t) => t.id !== id));
+        setHasUnsavedChanges(true);
     }
 
 
@@ -286,10 +360,12 @@ const Timetable = () => {
 
     return (
         <>
+            <button onClick={() => navigateTo(router, 'CLANTIMETABLES', clan)}> To Timetables</button>
             <p> Timetable </p>
             <p> {timetable.title} </p>
             <p> From {timetable.startTime} to {timetable.endTime} </p>
             <button onClick={() => openShareModal()}> Share Timetable </button>
+            <button onClick={handleSave}> Save Timetable </button>
             <TimetableShare
                 timetable={timetable}
                 timetableTasks={tasksWithOverrides}

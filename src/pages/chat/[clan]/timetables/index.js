@@ -4,6 +4,7 @@ import ClanTimetableList from "../../../../components/ClanTimetableList";
 import ReusableTaskList from "../../../../components/ReusableTaskList";
 import { useRouter } from "next/router";
 import CreateTimetable from "../../../../components/CreateTimetable";
+import ToClanHome from "../../../../components/ToClanHome";
 
 const TimetableDashboard = () => {
     const [reusableTaskTitle, setReusableTaskTitle ] = useState();
@@ -26,6 +27,7 @@ const TimetableDashboard = () => {
     return (
         <>
             <p> Timetable Dashboard </p>
+            <ToClanHome />
             <ClanTimetableList clanID={clan} />
             <CreateTimetable clanID={clan}/>
             <ReusableTaskList clanID={clan}/>

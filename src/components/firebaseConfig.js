@@ -1461,3 +1461,36 @@ export const listenToMusicStatus = (userID, callback) => {
 
     return unsubscribe;
 }
+
+// For the Saving of the Timetable Tasks to the Database
+export const saveTimetableTasks = async (timetableID, clanID, tasks) => {
+    try {
+        const tasksRef = collection(db, "clan", clanID, "timetables", timetableID, "tasks");
+        const snapshot = await getDocs(tasksRef);
+
+        const existingIDs = snapshot.docs.map((t) => t.id);
+        const newIDs = tasks.map((t) => t.id);
+
+        // Delete Tasks that are no longer in the Database
+        const toDelete = existingIDs.filter((id) => !newIDs.includes(id));
+        const deletePromises = toDelete.map((id) => deleteDoc(doc(tasksRef,id)));
+
+        // Save the desired tasks
+        const savePromises = tasks.map((task) => setDoc(doc(tasksRef, task.id), task));
+
+        // Runs deletes and saves at the same time
+        await Promise.all([...deletePromises, ...savePromises]);
+    }
+    catch(error) {
+        console.error("Cannot save the Timetable Tasks ", error);
+    }
+}
+
+export const getTimetableTasks = async (timetableID, clanID) => {
+    const snapshot = await getDocs(collection(db, "clan", clanID, "timetables", timetableID, "tasks"));
+
+    return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+    }))
+}
