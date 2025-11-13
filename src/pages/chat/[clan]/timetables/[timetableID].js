@@ -1,6 +1,6 @@
 // For the displaying of the specific Timetable
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -22,6 +22,8 @@ import ReusableTaskList from "../../../../components/ReusableTaskList";
 import SortableTask from "../../../../components/SortableTask";
 import TimetableShare from "../../../../components/TimetableShare";
 import { navigateTo } from "../../../../components/Routes";
+import { getMinutesSinceMidnight } from "../../../../utils/getMinutesSinceMidnight";
+import useCalculateEndTime from "../../../../customHooks/useCalculateEndTime";
 
 const Timetable = () => {
     const [timetable, setTimetable] = useState(null);
@@ -40,8 +42,13 @@ const Timetable = () => {
 
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+    const [timetableStartMinutes, setTimetableStartMinutes] = useState(null);
+    const [timetableEndMinutes, setTimetableEndMinutes] = useState(null);
+
     const router = useRouter();
     const { clan, timetableID } = router.query;
+
+    const timetableRef = useRef(null);
 
     const openShareModal = () => {
       setIsShareModalOpen(true);
@@ -114,6 +121,15 @@ const Timetable = () => {
         fetchTasks();
     }, [timetableID])
 
+
+    // Get the Starting Times and Ending Times for the Timetable to be used for Highlighting of Correct Area of the Timetable
+    useEffect(() => {
+        if (!timetable) return;
+        
+        setTimetableStartMinutes(getMinutesSinceMidnight(timetable.startTime));
+        setTimetableEndMinutes(getMinutesSinceMidnight(timetable.endTime)); 
+    }, [timetable]);
+
     const handleSave = async () => {
         if (!timetableID) {
             console.error("Missing Timetable ID");
@@ -132,6 +148,23 @@ const Timetable = () => {
         }
     }
 
+    // Autoscroll to the Timetable Start and Timetable End section of the Timetable
+    useEffect(() => {
+        if (!timetableRef.current) return;
+
+        const firstHourDiv = timetableRef.current.querySelector("div");
+        const hourHeight = firstHourDiv.clientHeight;
+
+        // Represents how many pixels each minute of the day represents in the Timetable Grid
+        const pixelsPerMinute = hourHeight / 60;
+
+        // Scroll to the Center of the Timetable Start
+        const scrollPosition = (timetableStartMinutes * pixelsPerMinute) - 20;
+
+        timetableRef.current.scrollTop = Math.max(0, scrollPosition);
+
+
+    }, [timetableRef, timetableStartMinutes])
 
     // Allows for the Time Intervals to be displayed
     const generateTimeSlots = (startHour = 0, endHour = 24, timeInterval = 15) => {
@@ -346,6 +379,25 @@ const Timetable = () => {
         );
     };
 
+    // Determine the earliest Timetable Time and the latest Timetable Time
+    // Where these times would respect the User Set Timetable Times first, then only expanding if the task falls outside of that range
+
+    tasksWithOverrides.forEach((task) => {
+        const taskStart = getMinutesSinceMidnight(task.timeSlot);
+        const taskEnd = useCalculateEndTime(task.timeSlot, task.duration);
+
+        // Update if the Task is earlier
+        if (taskStart < timetableStartMinutes) {
+            setTimetableStartMinutes(taskStart);
+        }
+
+        // Update if the Task is late
+        if (taskEnd > timetableEndMinutes) {
+            setTimetableEndMinutes(taskEnd);
+        }
+
+    });
+
     // Helps identify which droppable a draggable is currently hovering over
     function customCollisionDetection(args) {
         // Checks if the dragged item intersects with dropabble box.
@@ -385,49 +437,53 @@ const Timetable = () => {
                 }}
                 
             >
-                {Array.from({ length: 24 }).map((_, hour) => {
-                    const base = hour;
-                    const subSlots = [`${base}:00`, `${base}:15`, `${base}:30`, `${base}:45`];
+                <div ref={timetableRef} className="relative h-[600px] overflow-y-auto border border-gray-300">
+                    {Array.from({ length: 24 }).map((_, hour) => {
+                        const base = hour;
+                        const subSlots = [`${base}:00`, `${base}:15`, `${base}:30`, `${base}:45`];
 
-                    return (
-                        <div key={hour} className="mb-6">
-                            <h3 className="font-semibold text-lg mb-2">{`${hour}:00`}</h3>
-                            {subSlots.map(slot => {
-                                if (occupiedSlots.has(slot)) {
-                                    // Skip this slot, as the Task (That may take 2 slots or more) has overtaken this time slot
-                                    return null;
-                                }
+                        return (
+                            <div 
+                                key={hour} 
+                                className="mb-6">
+                                <h3 className="font-semibold text-lg mb-2">{`${hour}:00`}</h3>
+                                {subSlots.map(slot => {
+                                    if (occupiedSlots.has(slot)) {
+                                        // Skip this slot, as the Task (That may take 2 slots or more) has overtaken this time slot
+                                        return null;
+                                    }
 
-                                return (
-                                    <div key={slot} className="flex items-stretch mb-1">
-                                    {/* Gap next to the Timeslots for the Time */}
-                                    <div
-                                        className="w-16 flex-shrink-0 text-right pr-2 select-none text-gray-600"
-                                        style={{ height: 40 }}
-                                    >
-                                    </div>
-
-                                    {/* Timeslot container */}
-                                    <div className="w-full">
-                                        <SortableContext
-                                            items={groupedTasks[slot].map(t => t.id)}
-                                            strategy={verticalListSortingStrategy}
+                                    return (
+                                        <div key={slot} className="flex items-stretch mb-1">
+                                        {/* Gap next to the Timeslots for the Time */}
+                                        <div
+                                            className="w-16 flex-shrink-0 text-right pr-2 select-none text-gray-600"
+                                            style={{ height: 40 }}
                                         >
-                                            <DroppableSlot
-                                                slot={slot}
-                                                tasks={groupedTasks[slot]}
-                                                isDragging={isDragging}
-                                                isActive={activeDroppableId === slot}
-                                            />
-                                        </SortableContext>
-                                    </div>
-                                    </div>
-                                );
-                            })}
+                                        </div>
 
-                        </div>
-                    );
-                })}
+                                        {/* Timeslot container */}
+                                        <div className="w-full">
+                                            <SortableContext
+                                                items={groupedTasks[slot].map(t => t.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <DroppableSlot
+                                                    slot={slot}
+                                                    tasks={groupedTasks[slot]}
+                                                    isDragging={isDragging}
+                                                    isActive={activeDroppableId === slot}
+                                                />
+                                            </SortableContext>
+                                        </div>
+                                        </div>
+                                    );
+                                })}
+
+                            </div>
+                        );
+                    })}
+                </div>
                 <ReusableTaskList clanID={clan} taskListDivid="reusable-task-list"/>
                 {/* // Creates visual copy of the task being cloned/dragged */}
                 <DragOverlay>

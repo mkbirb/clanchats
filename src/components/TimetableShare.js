@@ -46,7 +46,7 @@ const TimetableShare = ({timetable, timetableTasks, isOpen, onClose}) => {
             const timeTableNotes = timetable.additionalNotes || "No Additional Notes";
 
             // Add the Task Text
-            const timetableText = timetableTasks.map((task, index) => {
+            const timetableText = [...timetableTasks].reverse().map((task, index) => {
                 const emojiNumber = toEmojiNumber(index + 1);
                 const title = task.title || "Untitled Task";
                 const desc = task.description || "No description";
