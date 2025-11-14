@@ -1119,6 +1119,7 @@ export const createTimetable =  async (clanID, title, date, startTime, endTime, 
         bringItems: bringItems,
         additionalNotes: additionalNotes,
         createdAt: serverTimestamp(),
+        editedAt: null,
     })
 };
 
@@ -1493,4 +1494,22 @@ export const getTimetableTasks = async (timetableID, clanID) => {
         id: doc.id,
         ...doc.data(),
     }))
+}
+
+export const editTimetable = async (clanID, timetableID, title, startTime, price, endTime, date, bringItems, additionalNotes) => {
+    const timetableRef = doc(db, "clan", clanID, "timetables", timetableID)
+    const snapshot = await getDoc(timetableRef);
+    const originalData = snapshot.data();
+
+    await updateDoc(timetableRef, {
+        title: title,
+        startTime: startTime,
+        price: price,
+        endTime: endTime,
+        date: date,
+        bringItems: bringItems,
+        additionalNotes: additionalNotes,
+        createdAt: originalData.createdAt ?? new Date(),
+        editedAt: new Date(),
+    })
 }

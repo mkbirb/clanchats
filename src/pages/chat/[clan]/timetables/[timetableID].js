@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { arrayMove } from '@dnd-kit/sortable';
-import { getTimetableTasks, retrieveClanTimetable, saveTimetableTasks } from "../../../../components/firebaseConfig";
+import { editTimetable, getTimetableTasks, retrieveClanTimetable, saveTimetableTasks } from "../../../../components/firebaseConfig";
 import { useRouter } from "next/router";
 import ReusableTaskList from "../../../../components/ReusableTaskList";
 import SortableTask from "../../../../components/SortableTask";
@@ -44,6 +44,13 @@ const Timetable = () => {
 
     const [timetableStartMinutes, setTimetableStartMinutes] = useState(null);
     const [timetableEndMinutes, setTimetableEndMinutes] = useState(null);
+
+
+    // Keeps Track on whether a new task has been added that is placed earlier than the Timetable Start Time
+    const [newEarliest, setNewEarliest] = useState(false);
+    
+    // Keeps track on whether a new task has been added that is placed later than the Timetable End Time
+    const [newLatest, setNewLatest] = useState(false);
 
     const router = useRouter();
     const { clan, timetableID } = router.query;
@@ -137,10 +144,90 @@ const Timetable = () => {
             return;
         }
 
+        if (tasksWithOverrides.length != 0) {
+            const earliestTask = tasksWithOverrides.reduce((earliest, task) => {
+                const taskStart = getMinutesSinceMidnight(task.timeSlot);
+                if (!earliest || taskStart < getMinutesSinceMidnight(earliest.timeSlot)) {
+                    return task;
+                }
+                return earliest;
+            }, null);
+            
+            if (!earliestTask || !earliestTask.timeSlot) {
+                console.error("No valid earliest task found. Skipping update.");
+                return; 
+            }
+            
+            const earliestTaskMinutes = getMinutesSinceMidnight(earliestTask.timeSlot);
+            const timetableStartMinutes = getMinutesSinceMidnight(timetable.startTime);
+
+            let confirmEarliestChange = "";
+            
+            if (newEarliest) {
+
+                confirmEarliestChange = window.confirm(`A task starts earlier at ${earliestTask.timeSlot}. Do you want to update the Timetable Start Time?`);
+                // console.log("Earliest Task being saved", earliestTask.timeSlot);
+            }
+            else if (earliestTaskMinutes > timetableStartMinutes) {
+                confirmEarliestChange = window.confirm(
+                    `The first task starts later at ${earliestTask.timeSlot}. Do you want to update the timetable start time?`
+                );
+            }
+
+            if (confirmEarliestChange) {    
+                // Update the Timetable as well
+                setTimetable(prev => ({
+                    ...prev,
+                    startTime: earliestTask.timeSlot, 
+                }));
+
+                await editTimetable(clan, timetable.id, timetable.title, earliestTask.timeSlot, timetable.price, timetable.endTime, timetable.date, timetable.bringItems, timetable.additionalNotes);
+            }
+
+
+            const latestTask = tasksWithOverrides.reduce((latest, task) => {
+                const taskEnd = useCalculateEndTime(task.timeSlot, task.duration);
+                if (!latest || taskEnd > useCalculateEndTime(latest.timeSlot, latest.duration)) {
+                    return { ...task, endTime: taskEnd };
+                }
+                    return latest;
+            }, null);
+
+            const latestTaskMinutes = getMinutesSinceMidnight(latestTask.endTime);
+            const timetableEndMinutes = getMinutesSinceMidnight(timetable.endTime);
+
+            // Keeps track of whether the Task End Time has been changed
+            let confirmLatestChange = "";
+
+            if (latestTaskMinutes < timetableEndMinutes) {
+                confirmLatestChange = window.confirm(
+                    `The last task ends earlier at ${latestTask.endTime}. Do you want to update the timetable end time?`
+                );
+            }
+            else if (newLatest) {
+                confirmLatestChange = window.confirm(`A task starts later at ${latestTask.endTime}. Do you want to update the Timetable End Time?`);
+            }
+            
+            if (confirmLatestChange) {
+                const endTime = useCalculateEndTime(latestTask.timeSlot, latestTask.duration);
+
+                // Update the Timetable as well
+                setTimetable(prev => ({
+                    ...prev,
+                    endTime: endTime,
+                }));
+
+                await editTimetable(clan, timetable.id, timetable.title, timetable.startTime, timetable.price, endTime, timetable.date, timetable.bringItems, timetable.additionalNotes);
+            }
+            
+        }
+
         try {
             await saveTimetableTasks(timetableID, clan, tasksWithOverrides);
             alert("Timetable Saved Successfully");
             setHasUnsavedChanges(false);
+            setNewEarliest(false);
+            setNewLatest(false);
         }
         catch (error) {
             console.log("Cannot save Timetable Tasks ", error);
@@ -384,16 +471,19 @@ const Timetable = () => {
 
     tasksWithOverrides.forEach((task) => {
         const taskStart = getMinutesSinceMidnight(task.timeSlot);
-        const taskEnd = useCalculateEndTime(task.timeSlot, task.duration);
+        const taskEndRaw = useCalculateEndTime(task.timeSlot, task.duration);
+        const taskEnd = getMinutesSinceMidnight(taskEndRaw);
 
         // Update if the Task is earlier
         if (taskStart < timetableStartMinutes) {
             setTimetableStartMinutes(taskStart);
+            setNewEarliest(true);
         }
 
-        // Update if the Task is late
+        // Update if the Task is later
         if (taskEnd > timetableEndMinutes) {
             setTimetableEndMinutes(taskEnd);
+            setNewLatest(true);
         }
 
     });
