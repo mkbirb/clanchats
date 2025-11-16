@@ -1,5 +1,7 @@
 import useMusicStatus from "../customHooks/useMusicStatus";
 import { FiExternalLink } from "react-icons/fi";
+import sadMusicBird from '../images/sadMusicBird.png'
+import Image from "next/image";
 
 const MusicStatusDisplay = ({userID}) => {
 
@@ -8,13 +10,19 @@ const MusicStatusDisplay = ({userID}) => {
     if (!musicStatus) {
         return (
             <>
-                <p className="font-bold"> No Music Status Set</p>
+                <div className="place-items-center">
+                    <Image
+                        src={sadMusicBird}
+                        alt="profilePictureEditIcon"    
+                        className="h-1/2 w-1/2"/>
+                    <p className="italic"> No Music Status Set</p>
+                </div>
             </>
         )
     }
 
     return (
-        <div className="!border !border-5 !border-amber-500 bg-black !p-4 !rounded-lg flex flex-col items-center">
+        <div className="!border-5 !border-amber-500 bg-black !p-4 !rounded-lg flex flex-col items-center">
             <img
                 src={musicStatus.albumArt}
                 alt={musicStatus.name}

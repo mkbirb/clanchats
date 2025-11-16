@@ -2,7 +2,7 @@
 // Where they can change Profile Picture or update Statuses
 
 import { useEffect, useState } from "react";
-import { getUserByID, updateOnlineStatus, updateProfilePicture, updateWordStatus } from "./firebaseConfig";
+import { getUserByID, resetMusicStatus, updateOnlineStatus, updateProfilePicture, updateWordStatus } from "./firebaseConfig";
 import { useCurrentUser } from "../context/CurrentUserContext";
 import Modal from 'react-modal';
 import { uploadImageToImgBB } from "../utils/imageUpload";
@@ -93,6 +93,15 @@ const DashboardProfile = () => {
     const handleDisplayProfilePicture = () => {
         setDisplayChangeProfilePicture(true);
         setPreviewManually(profilePicture);
+    }
+
+    const removeMusicStatus = async () => {
+        try {
+            await resetMusicStatus(userID);
+        }
+        catch(error) {
+            console.log("Cannot remove the Music Status ", error)
+        }
     }
 
 
@@ -195,11 +204,18 @@ const DashboardProfile = () => {
                     <div className="grid place-items-center rounded-2xl bg-[#FFDC2E] gap-3">
                         <p className="!font-bold !text-black text-2xl !mt-3"> 🎶 Music Status </p>
                         <MusicStatusDisplay userID={userID} />
-                        <button 
-                            onClick={() => setSearchMusicForStatusModal(true)}
-                            className="!bg-blue-400 !text-xl !rounded-xl !font-bold !text-white w-[50%] h-9 !mb-3 cursor-pointer">
-                            Change Song 🔄
-                        </button>
+                        <div className="flex flex-2 gap-3">
+                            <button 
+                                onClick={() => setSearchMusicForStatusModal(true)}
+                                className="flex-1 !bg-blue-400 !px-3 whitespace-nowrap !text-lg !rounded-xl !font-bold !text-white !mb-3 cursor-pointer">
+                                Change Song 🔄
+                            </button>
+                            <button 
+                                onClick={removeMusicStatus}
+                                className="flex-1 !bg-red-400 !text-xl !rounded-xl !font-bold !text-white !px-6 !gap-2 h-9 !mb-3 cursor-pointer">
+                                Remove
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex flex-col justify-center rounded-2xl bg-[#FFEB8A] gap-3">
@@ -208,9 +224,9 @@ const DashboardProfile = () => {
                             <textarea 
                                 value={tempWordStatus} 
                                 onChange={(e) => setTempWordStatus(e.target.value)}
-                                className="w-11/12 h-[87%] px-4 py-2 !border text-center !border-black !border-5 !bg-white rounded-lg"
+                                className="w-11/12 !h-[87%] px-4 py-2 text-center !border-black !border-5 !bg-white rounded-lg"
                             />
-                            <button type="submit" className="!bg-green-500 !text-xl !rounded-xl !font-bold !text-white w-[50%] h-9 !mb-3 cursor-pointer">Save</button>
+                            <button type="submit" className="!bg-green-500 !text-xl !rounded-xl !font-bold !text-white w-[50%] !mt-3 h-9 !mb-3 cursor-pointer">Save</button>
                         </form>
                     </div>
                 </div>

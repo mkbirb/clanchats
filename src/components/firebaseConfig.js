@@ -1446,6 +1446,14 @@ export const spotifySearchTracks = async (track, userID) => {
     alert(`Music status set: ${track.name} — ${track.artist}`);
 }
 
+// Changes the Music Status set for the user to None
+export const resetMusicStatus = async (userID) => {
+    await setDoc(
+        doc(db, "users", userID), 
+        { musicStatus: null },
+        { merge: true })
+}
+
 export const listenToMusicStatus = (userID, callback) => {
     // Allows user to listen to Spotify Music Status
     if (!userID) return () => {};

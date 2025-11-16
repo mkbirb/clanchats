@@ -2,8 +2,6 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/api/spotify/search": "pages/api/spotify/search.js",
-  "/chat/[clan]/members": "pages/chat/[clan]/members.js",
-  "/chat/[clan]": "pages/chat/[clan].js",
-  "/dashboard": "pages/dashboard.js"
+  "/dashboard": "pages/dashboard.js",
+  "/api/spotify/search": "pages/api/spotify/search.js"
 }
