@@ -26,13 +26,15 @@ const LeaveClan = ({clanData}) => {
 
     return (
         <>
-            <button onClick={() => setConfirmationModal(true)}> Leave Clan </button>
+            <div className="flex justify-center !mt-3">
+                <button onClick={() => setConfirmationModal(true)} className="!bg-red-600 !text-white !font-bold !border-0 !rounded-2xl !p-3 text-3xl cursor-pointer"> Leave Clan </button>
 
-            <Modal isOpen={confirmationModal} onRequestClose = {() => setConfirmationModal(false)}>
-                <p> Are you sure you want to leave {clanData.name} ? </p>
-                <button onClick={() => handleLeaveClan(true)}> Yes </button>
-                <button onClick={() => handleLeaveClan(false)}> No </button>
-            </Modal>
+                <Modal isOpen={confirmationModal} onRequestClose = {() => setConfirmationModal(false)}>
+                    <p> Are you sure you want to leave {clanData.name} ? </p>
+                    <button onClick={() => handleLeaveClan(true)}> Yes </button>
+                    <button onClick={() => handleLeaveClan(false)}> No </button>
+                </Modal>
+            </div>
         </>
     )
 }

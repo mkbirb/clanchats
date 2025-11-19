@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import Image from 'next/image';
 import Modal from 'react-modal';
 import { createClanAnnouncements, deleteClanAnnoucement, editClanAnnoucements, retrieveClanAnnoucements } from "./firebaseConfig";
-import announcementIcon from '../images/announcement.png';
+import generalAnnouncementIcon from '../images/announcement.png';
+import announcementIcon from '../images/announcementIcon.png';
 import exclamationIcon from '../images/exclamation.png';
 import useImagePreview from "../customHooks/useImagePreview";
 import { uploadImageToImgBB } from "../utils/imageUpload";
 import { annotateDynamicAccess } from "next/dist/server/app-render/dynamic-rendering";
+import { getFormattedDate } from "../utils/getFormattedDate";
+import { getTimeFromFirestoreTimestamp } from "../utils/getTimeFromFirestoreTimestamp";
 
 const ClanAnnoucements = ({clanData}) => {
     const [displayAnnoucementModal, setDisplayAnnoucementModal] = useState(false);
@@ -180,24 +183,48 @@ const ClanAnnoucements = ({clanData}) => {
 
     return (
         <>
-            <p> Annoucements </p>
+            <div className="flex flex-2 h-[10vh]">
+                <div className="flex flex-2 h-[10vh]">
+                    <Image 
+                        src={announcementIcon} 
+                        className="h-[10%] w-[12%]"/>
+                    <div>
+                        <p className="font-bold text-2xl !mt-7 !mb-2"> Announcements </p>
+                        <hr className="!bg-[#f79326] !h-3 rounded-2xl !border-0 w-[100%]" />
+                    </div>
+                </div>
+                <div className="flex justify-center items-center">
+                    <button 
+                        onClick={() => {setDisplayAnnoucementModal(true), setDisplayViewAnnoucement(false)}}
+                        className="!bg-black !text-white self-center !font-bold border !rounded-2xl w-30 h-10 cursor-pointer"> Add </button>
+                </div>
+            </div>
             {annoucements.length === 0 ? (
-                <p> There are No Annoucements yet </p>
+                <p> There are No Announcements yet </p>
             ): (
                 annoucements.map((annoucement) => (
-                    <div onClick={() => openExistingAnnoucement(annoucement)} key={annoucement.id} className="mb-4">
-                        {annoucement.type === "General" && (
-                            <Image src={announcementIcon} alt="Announcement Icon" className="w-24 h-24" />
-                        )}
-                        {annoucement.type === "Important" && (
-                            <Image src={exclamationIcon} alt="Important Icon" className="w-24 h-24"/>
-                        )}
-                        <p> {annoucement.createdAt?.toDate().toLocaleString()} </p>
-                        <p> {annoucement.title} </p>
+                    <div onClick={() => openExistingAnnoucement(annoucement)} key={annoucement.id} className="mb-4 cursor-pointer">
+                        <hr className="!bg-black !h-1.5 !border-0 w-[100%] !mt-3" />
+                        <div className="flex flex-2 !mt-3 gap-3">
+                            <div className="relative inline-block">
+                                {annoucement.type === "General" && (
+                                    <Image src={generalAnnouncementIcon} alt="Announcement Icon" className="w-24 h-24" />
+                                )}
+                                {annoucement.type === "Important" && (
+                                    <Image src={exclamationIcon} alt="Important Icon" className="w-24 h-24"/>
+                                )}
+                                <Image src={announcementIcon} className="w-12 h-12 absolute -bottom-1 -right-1" />
+                            </div>
+                            <div>
+                                <p className="text-2xl font-bold"> {annoucement.title} </p>
+                                <p className="italic"> {getFormattedDate(annoucement.createdAt)} {getTimeFromFirestoreTimestamp(annoucement.createdAt)}</p>
+                                {/* Shortens the Description Text if it is too long */}
+                                <p> {annoucement.description.length > 100 ? annoucement.description.slice(0, 100) + "..." : annoucement.description} </p>
+                            </div>
+                        </div>
                     </div>
                 ))
             )}
-            <button onClick={() => {setDisplayAnnoucementModal(true), setDisplayViewAnnoucement(false)}}> Add </button>
             <Modal isOpen={displayAnnoucementModal} onRequestClose = {resetAnnoucementModal}>
                 {displayAnnoucementTypeSelection && !displayCreateAnnoucement && !displayViewAnnoucement && (
                     <>

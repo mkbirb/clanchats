@@ -135,49 +135,54 @@ const Slideshow = ({images = ClanSlidesDefault, interval = 3000}) => {
 
     return (
         <>
-            <div>
-                <Modal
-                    isOpen={displayAddImagesToSlideshow}
-                    onRequestClose={() => {setDisplayAddImagesToSlideshow(false),  resetMultiplePreview()}}
-                >
-                    <p> Your Slideshow Pictures </p>
-                    { // Previews the Image that has been uploaded by the User
-                        multiplePreviewURLs.length > 0 && (
-                            <ul>
-                                {multiplePreviewURLs.map((item, index) => (
-                                    <li key={index}>
-                                        <img src={item.url} alt={`Preview ${index}`} style={{ width: '100px' }} />
-                                        <button onClick={() => moveImage(index, -1)} disabled={index === 0}>↑</button>
-                                        <button onClick={() => moveImage(index, 1)} disabled={index === multiplePreviewURLs.length - 1}>↓</button>
-                                        <button onClick={() => removeImage(index)}>✕</button>
-                                    </li>
-                                    
-                                ))}
-                            </ul>
-                        )
-                    }
-                    <form onSubmit={handleAddSlides}>
-                        <input 
-                            type="file"
-                            multiple
-                            onChange={(e) => {
-                                handleMultipleImageChange(e);
-                            }}
-                            accept="image/*"
-                        />
-                        <button type="submit"> Save </button>
-                    </form>
-                </Modal>
-                {slideshowImages.length > 0 && (
-                    <img
+            <Modal
+                isOpen={displayAddImagesToSlideshow}
+                onRequestClose={() => {setDisplayAddImagesToSlideshow(false),  resetMultiplePreview()}}
+            >
+                <p> Your Slideshow Pictures </p>
+                { // Previews the Image that has been uploaded by the User
+                    multiplePreviewURLs.length > 0 && (
+                        <ul>
+                            {multiplePreviewURLs.map((item, index) => (
+                                <li key={index}>
+                                    <img src={item.url} alt={`Preview ${index}`} style={{ width: '100px' }} />
+                                    <button onClick={() => moveImage(index, -1)} disabled={index === 0}>↑</button>
+                                    <button onClick={() => moveImage(index, 1)} disabled={index === multiplePreviewURLs.length - 1}>↓</button>
+                                    <button onClick={() => removeImage(index)}>✕</button>
+                                </li>
+                                
+                            ))}
+                        </ul>
+                    )
+                }
+                <form onSubmit={handleAddSlides}>
+                    <input 
+                        type="file"
+                        multiple
+                        onChange={(e) => {
+                            handleMultipleImageChange(e);
+                        }}
+                        accept="image/*"
+                    />
+                    <button type="submit"> Save </button>
+                </form>
+            </Modal>
+            {slideshowImages.length > 0 && (
+                <img
                     src={slideshowImages[currentIndex]}
                     alt={`Slide ${currentIndex}`}
-                    style={{ width: '300px', height: 'auto' }}
-                    />
-                )}
-                <button onClick={goPreviousSlide}> Previous </button>
-                <button onClick={goNextSlide}> Next </button>
-                <button onClick={() => setDisplayAddImagesToSlideshow(true)}> Add </button>
+                    className="!mt-5 gap-3 w-[95%] !h-[80%]"
+                />
+            )}
+            <div className="flex flex-row w-full items-center !mt-3 relative !mb-3">
+                <div className="absolute left-1/2 transform -translate-x-1/2 flex gap-4">
+                    <button onClick={goPreviousSlide} className="!text-3xl !font-bold !bg-orange-300 !text-white w-[5vw] !rounded-3xl text-center cursor-pointer"> &lt; </button>
+                    <button onClick={goNextSlide} className="!text-3xl !font-bold !bg-orange-300 !text-white w-[5vw] !rounded-3xl text-center cursor-pointer"> &gt; </button>
+                </div>
+                <div className="flex flex-1 justify-end">
+                    <button onClick={() => setDisplayAddImagesToSlideshow(true)} className="!text-3xl !font-bold !bg-orange-400 !text-white w-[15%] !rounded-3xl text-center cursor-pointer"> + </button>
+                </div>
+               
             </div>
 
         </>

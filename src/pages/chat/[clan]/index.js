@@ -61,25 +61,31 @@ const chat = () => {
                 // Display once already fetched the Clan Data
                 clanData ? (
                     <>
-                        <button onClick={() => {navigateTo(router, "DASHBOARD"), changeRoomID(null) }}> To Dashboard </button>
-                        <h1 className="font-mono text-3xl font-bold text-blue-600"> Clan: {clanData.name}!</h1>
-                        <ChatList clanData={clanData} />
-                        {
-                            // Display the Message Chat, when a User has been selected
-                            roomID ? (
-                                <>
-                                    <ReadMessage />
-                                    <SendMessage onReplySent={refreshReplyList}/>
-                                    <ReplyList refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
-                                    <SearchMessages />
-                                </>
+                        <div className="flex flex-2">
+                            <div>
+                                <button onClick={() => {navigateTo(router, "DASHBOARD"), changeRoomID(null) }}> To Dashboard </button>
+                                <h1 className="font-mono text-3xl font-bold text-blue-600"> Clan: {clanData.name}!</h1>
+                                <ChatList clanData={clanData} />
+                            </div>
+                            <div>
+                                {
+                                    // Display the Message Chat, when a User has been selected
+                                    roomID ? (
+                                        <>
+                                            <ReadMessage />
+                                            <SendMessage onReplySent={refreshReplyList}/>
+                                            <ReplyList refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
+                                            <SearchMessages />
+                                        </>
 
-                            ) : (
-                                <>
-                                    <ClanHome clanData={clanData}/>
-                                </>
-                            )
-                        }
+                                    ) : (
+                                        <>
+                                            <ClanHome clanData={clanData}/>
+                                        </>
+                                    )
+                                }
+                            </div>
+                        </div>
                     </>
                 ): (
                 <p> Loading... </p>

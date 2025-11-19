@@ -121,21 +121,27 @@ const PollResults = ({pollID, clanData}) => {
 
     return (
         <>
-            <div style={{ width: "100%", height: "300px" }}>
-                {totalVotes === 0 && <p>No votes yet, be the first to vote!</p>}
-                {!poll.isOpen && <p className="text-gray-500 italic">This poll is closed. You can no longer vote.</p>}
-                <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={voteCounts}>
-                        <CartesianGrid strokeDasharray= "3 3" />
-                        <XAxis dataKey="option"/>
-                        <YAxis allowDecimals={false} />
-                        <Tooltip content={<CustomTooltip />}/>
-                        <Bar dataKey="votes" fill="#8884d8" />
-                    </BarChart>
-                </ResponsiveContainer>
+            <div className="flex flex-2 flex-col">
+                <div className="!h-10">
+                    {totalVotes === 0 && <p>No votes yet, be the first to vote!</p>}
+                    {!poll.isOpen && <p className="text-gray-500 italic">This poll is closed. You can no longer vote.</p>}
+                </div>
+                <div className="w-[600px] h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={voteCounts}>
+                            <CartesianGrid strokeDasharray= "3 3" />
+                            <XAxis dataKey="option"/>
+                            <YAxis allowDecimals={false} />
+                            <Tooltip content={<CustomTooltip />}/>
+                            <Bar dataKey="votes" fill="#8884d8" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="flex flex-2 justify-center gap-3 items-center !mt-12 w-[40vw]">
+                    <button onClick={removePoll} className="!bg-red-400 !border !border-none !rounded-xl !text-xl !font-bold !text-white cursor-pointer !px-6"> Delete Poll </button>
+                    <button onClick={disablePoll} className="!bg-blue-400 !px-3 !text-xl !rounded-xl !text-white !font-bold cursor-pointer"> Close Poll </button>
+                </div>
             </div>
-            <button onClick={removePoll}> Delete Poll </button>
-            <button onClick={disablePoll}> Close Poll </button>
         </>
     )
 }

@@ -6,6 +6,8 @@ import PollVoting from "./PollVoting";
 import PollResults from "./PollResults";
 import { useCurrentUser } from "../context/CurrentUserContext";
 import Modal from 'react-modal';
+import Image from "next/image";
+import pollsIcon from '../images/birdVote.png';
 
 const PollList = ({clanData}) => {
 
@@ -87,18 +89,47 @@ const PollList = ({clanData}) => {
         }
     }
 
+    // Sort the Polls based on New Open Polls First, then Closed Later Polls etc
+    const sortedPolls = [...clanPollList].sort((a, b) => {
+        // Open poll first
+        if (a.isOpen !== b.isOpen) {
+            return a.isOpen ? -1 : 1; 
+        }
+
+        // Since the input is Firestore Stamp
+        const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+
+        // Sort by created date if both are open or both are closed
+        return bDate - aDate; 
+    })
+
 
     return (
         <>
-            <div>
-                <p> Polls </p>
-                <button onClick={() => setDisplayCreatePoll(true)}> Create Poll </button>
-                {clanPollList.length > 0 ? (clanPollList.map((poll) => (
-                    <>
-                        <PollVoting poll={poll} userID={userID} clanData={clanData} />
-                        <PollResults pollID={poll.id} clanData={clanData}/>
-                    </>
-                ))) : (
+            <div className="flex flex-2 !mt-2">
+                <div className="flex flex-2 h-[10vh] gap-3">
+                    <Image
+                        src={pollsIcon} 
+                        className="h-[1%] w-[12%]"/>
+                    <div>
+                        <p className="font-bold text-2xl !mt-7 !mb-2"> Polls </p>
+                        <hr className="!bg-[#f79326] !h-3 rounded-2xl !border-0 w-[100%]" />
+                    </div>
+                </div>
+                <button onClick={() => setDisplayCreatePoll(true)} className="!bg-black !text-white self-center !font-bold border !rounded-2xl w-30 h-10 cursor-pointer"> Create Poll </button>
+            </div>
+                {clanPollList.length > 0 ? (
+                    <div className="max-h-[800px] overflow-y-auto">
+                        {sortedPolls.map((poll) => (
+                            <>
+                                <div className="flex flex-2">
+                                    <PollResults pollID={poll.id} clanData={clanData}/>
+                                    <PollVoting poll={poll} userID={userID} clanData={clanData} />
+                                </div>
+                            </>
+                        ))}
+                    </div>) : (
                     <p> No Clan Votes yet...</p>
                 )}
                 <Modal isOpen={displayCreatePoll} onRequestClose = {resetCreatePollModal}>
@@ -126,7 +157,6 @@ const PollList = ({clanData}) => {
                         <button type="submit"> Submit </button>
                     </form>
                 </Modal>
-            </div>
         </>
     )
 }
