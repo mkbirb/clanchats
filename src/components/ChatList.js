@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
-import { checkRoom, createRoom, retrieveRoom, getUserByID } from "./firebaseConfig";
+import { checkRoom, createRoom, retrieveRoom, getUserByID, createRetrieveGroupRoom } from "./firebaseConfig";
 
 
-const ChatList = ({clanData}) => {
-    const { userID, roomID, changeRoomID } = useCurrentUser(); 
+const ChatList = ({clanData, onSelectDirectRoom, onSelectGroupChat}) => {
+    const { userID} = useCurrentUser(); 
     const [memberInfo, setMemberInfo] = useState([]);
 
     useEffect(() => {
@@ -29,35 +29,16 @@ const ChatList = ({clanData}) => {
         fetchMemberNames();
     }, [clanData, userID]);
 
-    const createOrRetrieveRoom = async(otherUserID) => {
-        // Check if Room exists
-        const roomExists = await checkRoom(userID, otherUserID);
-
-        console.log("Room Exists is ", roomExists);
-        if(!roomExists) {
-            // Create the Room
-            await createRoom(userID, otherUserID);
-        }
-
-        // Then retrieve the Room
-        const roomData = await retrieveRoom(userID, otherUserID);
-
-        console.log("Room Data ", roomData);
-        console.log("Room Data ID ", roomData.room.id);
-
-        // Change the RoomID
-        changeRoomID(roomData.room.id);
-    }
-     
 
     return (
         <> 
             <p> People: </p>
+            <button onClick={() => onSelectGroupChat(clanData.id)}> Group Chat </button>
             {
               memberInfo.map((user) => (
                     <>
 
-                        <button key={user.id} onClick={() => createOrRetrieveRoom(user.id)}> {user.name} </button>
+                        <button key={user.id} onClick={() => onSelectDirectRoom(user.id)}> {user.name} </button>
                     </>
                 ))
             }

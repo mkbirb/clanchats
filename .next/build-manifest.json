@@ -28,10 +28,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/chat/[clan].js"
     ],
-    "/chat/[clan]/timetables": [
+    "/dashboard": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/chat/[clan]/timetables.js"
+      "static/chunks/pages/dashboard.js"
     ]
   },
   "ampFirstPages": []

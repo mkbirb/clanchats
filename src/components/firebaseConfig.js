@@ -546,7 +546,7 @@ export const createRoom = async (firstPersonID, secondPersonID) => {
         person2: secondPersonIDRef,  
         level: {level: 0, experience: 0},
         streak: 0,
-        roomType: null,
+        roomType: "direct",
         messages: [] 
     });
 };
@@ -1189,8 +1189,9 @@ export async function getCachedUserByID(uid) {
   const userDoc = await getDoc(doc(db, 'users', uid));
   if (userDoc.exists()) {
     const data = userDoc.data();
-    userCache[uid] = data;
-    return data;
+    const user = { id: uid, ...data };
+    userCache[uid] = user;
+    return user;
   }
 
   return null;
@@ -1520,4 +1521,32 @@ export const editTimetable = async (clanID, timetableID, title, startTime, price
         createdAt: originalData.createdAt ?? new Date(),
         editedAt: new Date(),
     })
+}
+
+// For the Group Chat in the Clan
+export const createRetrieveGroupRoom = async (clanId) => {
+    const groupChatsRef = collection(db, "clan", clanId, "groupChats");
+
+    const snapshot = await getDocs(groupChatsRef);
+
+    // Go to the Group Chat if it exists
+    if (!snapshot.empty) {
+        const existingRoom = snapshot.docs[0];
+        return { id: existingRoom.id, ...existingRoom.data() };
+    }
+
+
+    // Create the Group Chat if it does not exist yet
+    const roomRef = await addDoc(groupChatsRef, {
+        roomType: "group",
+        members: [],       
+        createdAt: serverTimestamp()
+    });
+
+    const newGroupRoomSnap = await getDoc(roomRef);
+
+    
+    return {
+         id: newGroupRoomSnap.id, ...newGroupRoomSnap.data()
+    };
 }

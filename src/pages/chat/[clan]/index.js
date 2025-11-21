@@ -4,7 +4,7 @@ import ReadMessage from "../../../components/ReadMessage";
 import ChatList from "../../../components/ChatList";
 import { useCurrentUser } from "../../../context/CurrentUserContext"; 
 import { useRouter } from 'next/router';
-import { retrieveClan } from "../../../components/firebaseConfig";
+import { checkRoom, createRetrieveGroupRoom, createRoom, retrieveClan, retrieveRoom } from "../../../components/firebaseConfig";
 import { navigateTo } from "../../../components/Routes";
 import SearchMessages from "../../../components/SearchMessages";
 import ReplyList from "../../../components/ReplyList";
@@ -25,6 +25,9 @@ const chat = () => {
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const refreshReplyList = () => setRefreshTrigger(prev => prev + 1);
+
+    // Keeps track on what type of Room, whether it is Direct or Group Chat
+    const [roomType, setRoomType] = useState("");
 
     // Gets the Clan ID from the URL Parameter
     useEffect(() => {
@@ -55,6 +58,37 @@ const chat = () => {
 
     }, [clanID])
 
+    // Used for when the User selects the Direct User Room or the Group Chat Buttons
+    const handleSelectDirectRoom = async (otherUserID) => {
+
+        // Check if Room exists
+        const roomExists = await checkRoom(user.id, otherUserID);
+
+        console.log("Room Exists is ", roomExists);
+        if(!roomExists) {
+            // Create the Room
+            await createRoom(user.id, otherUserID);
+        }
+
+        // Then retrieve the Room
+        const roomData = await retrieveRoom(user.id, otherUserID);
+
+        console.log("Room Data ", roomData);
+        console.log("Room Data ID ", roomData.room.id);
+
+        // Change the RoomID
+        changeRoomID(roomData.room.id);
+
+        setRoomType(roomData.roomType);
+    }
+
+    const handleGroupChatClick = async (clanID) => {
+        const groupRoom = await createRetrieveGroupRoom(clanID);
+
+        changeRoomID(groupRoom.id);
+        setRoomType(groupRoom.roomType);
+    };
+
     return (
         <> 
             {
@@ -65,15 +99,15 @@ const chat = () => {
                             <div>
                                 <button onClick={() => {navigateTo(router, "DASHBOARD"), changeRoomID(null) }}> To Dashboard </button>
                                 <h1 className="font-mono text-3xl font-bold text-blue-600"> Clan: {clanData.name}!</h1>
-                                <ChatList clanData={clanData} />
+                                <ChatList clanData={clanData} onSelectDirectRoom={handleSelectDirectRoom} onSelectGroupChat={handleGroupChatClick} />
                             </div>
                             <div>
                                 {
                                     // Display the Message Chat, when a User has been selected
                                     roomID ? (
                                         <>
-                                            <ReadMessage />
-                                            <SendMessage onReplySent={refreshReplyList}/>
+                                            <ReadMessage roomType={roomType} />
+                                            <SendMessage roomType={roomType} onReplySent={refreshReplyList}/>
                                             <ReplyList refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
                                             <SearchMessages />
                                         </>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID, retrieveRoomBasedOnID, getCachedUserByID} from "./firebaseConfig.js";
+import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID, retrieveRoomBasedOnID, getCachedUserByID, createRetrieveGroupRoom, retrieveClan} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
@@ -18,7 +18,7 @@ import PresenceDisplay from "./PresenceDisplay.js";
 import YoutubeEmbed from "./YoutubeEmbed.js";
 
 
-const ReadMessage = () => {
+const ReadMessage = ({roomType = "direct"}) => {
     const [messages, setMessages] = useState([]);
     const [editText, setEditText] = useState('');
     const [editingMessageId, setEditingMessageId] = useState(null);
@@ -110,8 +110,9 @@ const ReadMessage = () => {
 
           const data = await retrieveRoomBasedOnID(roomID);
 
-            // Extract person1 and person2 into participants
-          const { person1, person2 } = data || {};
+          // Extract person1 and person2 into participants
+          const { person1, person2} = data || {};
+
           const participantList = [person1, person2].filter(Boolean);
           setParticipants(participantList);
         } catch (error) {
@@ -119,7 +120,18 @@ const ReadMessage = () => {
         }
       };
 
-      fetchRoom();
+      const fetchClanMembers = async () => {
+        const clanData = await retrieveClan(clan);
+
+        setParticipants(clanData.members);
+      }
+
+      if (roomType == "direct") {
+        fetchRoom();
+      }
+      else if (roomType == "group") {
+        fetchClanMembers();
+      }
     }, [roomID]);
 
     useEffect(() => {
@@ -234,12 +246,21 @@ const renderMessageWithCustomEmojis = (text) => {
         <>
           <p>Messages {userID}</p>
           <p>Room ID {roomID}</p>
-          <PresenceDisplay userID={targetUserID} />
-          <DisplayRoomLevel />
+          {roomType === "group" ? (<>
+            {Object.values(participantData).map((person) => (
+                <>
+                  <p> {person.username}</p>
+                  <PresenceDisplay userID={person.id} />
+                </>
+            ))}
+          </>) : (<>
+              <PresenceDisplay userID={targetUserID} />
+              <DisplayRoomLevel />
+          </>)}
           {
             messages.length === 0 ? (
               <>
-                <p> Looks like this a new Chat, send the first message!</p>
+                <p> Looks like this is a new Chat, send the first message!</p>
               </>
             ): (
                 messages.map((message) => (

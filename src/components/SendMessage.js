@@ -8,7 +8,7 @@ import EmojiPicker from './EmojiPicker.js';
 import { jumpToMessage } from "../utils/jumpToMessage.js";
 import { useTypingUsers } from "../customHooks/useTypingUsers.js";
 
-const SendMessage = ({onReplySent}) => {
+const SendMessage = ({roomType = "direct", onReplySent}) => {
     const [message, setMessage] = useState("");
     const { userID, roomID, user} = useCurrentUser();
     const [image, setImage] = useState(null);
@@ -62,8 +62,12 @@ const SendMessage = ({onReplySent}) => {
         // Scroll to bottom of Messages
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-        // Increase the Experience for the Room
-        await incrementRoomExperience(roomID, expGivenPerMessage);
+        // Increase the Experience for the Room, only if Direct Room
+
+        console.log("let me explain ", roomType)
+        if (roomType === "direct") {
+            await incrementRoomExperience(roomID, expGivenPerMessage);
+        }
         
         // Reset the Message
         setMessage("");
