@@ -3,7 +3,7 @@ import { getOriginalMesssage} from '../utils/getOriginalMessage';
 import { useCurrentUser } from "../context/CurrentUserContext";
 
 // Custom Hook that retrieves the Original Message based on an ID given
-const useFetchOriginalMessage = (replyTo) => {
+const useFetchOriginalMessage = (clanID, roomType, replyTo) => {
     const [originalMessage, setOriginalMessage] = useState(null);
 
     const {roomID} = useCurrentUser();
@@ -11,7 +11,7 @@ const useFetchOriginalMessage = (replyTo) => {
 
     useEffect(() => {
         const fetchMessage = async () => {
-            const message = await getOriginalMesssage(replyTo, roomID);
+            const message = await getOriginalMesssage(replyTo, clanID, roomID, roomType);
 
             setOriginalMessage(message);
         }

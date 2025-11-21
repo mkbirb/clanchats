@@ -5,7 +5,7 @@ import { useCurrentUser } from "../context/CurrentUserContext";
 import { jumpToMessage } from "../utils/jumpToMessage";
 import useFetchMessageOwner from "../customHooks/useFetchMessageOwner";
 
-const ReplyList = ({refreshTrigger, refreshReplyList}) => {
+const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
 
     const { userID, roomID } = useCurrentUser(); 
     const [replyList, setReplyList] = useState([]);
@@ -17,7 +17,7 @@ const ReplyList = ({refreshTrigger, refreshReplyList}) => {
         const unrepliedMessages = async () => {
 
             try {
-                const messageList = await getUnRepliedMessages(roomID, userID);
+                const messageList = await getUnRepliedMessages(clanID, roomID, roomType, userID);
 
                 setReplyList(messageList);
             }
@@ -31,7 +31,7 @@ const ReplyList = ({refreshTrigger, refreshReplyList}) => {
 
     const removeFromReplyList = async (messageID) => {
         try {
-            await addRemovedReplyListMessageID(roomID, userID, messageID);
+            await addRemovedReplyListMessageID(clanID, roomID, roomType, userID, messageID);
 
             // Then refresh the Reply List
             refreshReplyList();

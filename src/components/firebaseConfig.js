@@ -9,15 +9,16 @@ import { child, off, onValue, ref } from 'firebase/database';
 // Used for User Caching
 const userCache = new Map();
 
-export const createMessage = async (text, userId, roomId, seen, imageUrl = null, replyTo = null, reactions = null) => {
+// Clan ID is optional, as only needed for Group Chats
+export const  createMessage = async (text, userId, roomId, roomType, clanId = null, seen, imageUrl = null, replyTo = null, reactions = null) => {
     if ((text.length == 0) && (imageUrl == null)){
         // Prevents Empty Messages
         return;
     }
 
     try {
-        // Add the Message to the Firestore
-        await addDoc(collection(db, "rooms", roomId, "messages"), {
+
+        const messagePayLoad = {
             // Define the Document Model
             text: text,
             userID: userId,
@@ -33,8 +34,20 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
             // Stores which Emoji has been reacted to by which User
             userReactions: {},
             reactionsOrder: [],
-        });
-        console.log("Sent Message");
+        }
+
+        let messageRef;
+
+        if (roomType == "direct") {
+            // Add the Message to the Firestore
+            messageRef = collection(db, "rooms", roomId, "messages");
+        }
+        else if (roomType == "group") {
+            messageRef = collection(db, "clan", clanId, "groupChats", roomId, "messages");
+
+        }
+
+        await addDoc(messageRef, messagePayLoad);
     }
     catch(error) {
         alert("Error creating the Message: " + error);
@@ -42,9 +55,17 @@ export const createMessage = async (text, userId, roomId, seen, imageUrl = null,
     }
 };
 
-export const retrieveMessages = (setMessages, roomID) => {
+export const retrieveMessages = (setMessages, clanId, roomID, roomType) => {
     // Refer to the correct collection
-    const messagesRef = collection(db, "rooms", roomID, "messages");
+
+    let messagesRef;
+
+    if (roomType == "direct") {
+        messagesRef = collection(db, "rooms", roomID, "messages");
+    }
+    else if (roomType == "group") {
+        messagesRef = collection(db, "clan", clanId, "groupChats", roomID, "messages");
+    }
 
     // Request to the database
     const records = query(
@@ -77,9 +98,15 @@ export const retrieveMessages = (setMessages, roomID) => {
     
 }
 
-export const deleteMessage = async (messageId, roomID) => {
+export const deleteMessage = async (messageId, clanID, roomID, roomType) => {
     try {
-        await deleteDoc(doc(db, "rooms", roomID, "messages", messageId));
+
+        if (roomType === "direct") {
+            await deleteDoc(doc(db, "rooms", roomID, "messages", messageId));
+        }
+        else if (roomType === "group") {
+            await deleteDoc(doc(db, "clan", clanID, "groupChats", roomID, "messages", messageId));
+        }
         console.log("Message was able to be deleted")
     }
     catch(error) {
@@ -87,10 +114,19 @@ export const deleteMessage = async (messageId, roomID) => {
     }
 }
 
-export const editMessage = async (messageId, newText, roomID) => {
+export const editMessage = async (messageId, newText, clanID, roomID, roomType) => {
     // Updates the Message with the new text and the Date/Time the message was edited
     try {
-        const messageRef = doc(db, "rooms", roomID, "messages", messageId);
+
+        let messageRef;
+
+        if (roomType === "direct") {
+            messageRef = doc(db, "rooms", roomID, "messages", messageId);
+        }
+        else if (roomType === "group") {
+            messageRef = doc(db, "clan", clanID, "groupChats", roomID, "messages", messageId)
+
+        }
 
         const messageSnapshot = await getDoc(messageRef);
         
@@ -372,12 +408,20 @@ export const searchUsers = async (input) => {
     return searchList;
 }
 
-export const addReaction = async (messageId, userId, emoji, roomID) => {
+export const addReaction = async (messageId, userId, emoji, clanId, roomID, roomType) => {
     // Recall that the Reaction Field Structure is "😂": 2
     // While the UserReaction Field Structure is userId123: "😂"
 
     // Get the Message that we want to react too
-    const messageRef = doc(db, "rooms", roomID, "messages", messageId);
+    let messageRef;
+
+    if (roomType == "direct") {
+        messageRef = doc(db, "rooms", roomID, "messages", messageId);
+    }
+    else if (roomType == "group") {
+        messageRef = doc(db, "clan", clanId, "groupChats", roomID, "messages", messageId);
+    }
+
     const messageSnapshot = await getDoc(messageRef);
 
     if (!messageSnapshot.exists()) {
@@ -397,7 +441,7 @@ export const addReaction = async (messageId, userId, emoji, roomID) => {
         console.log("User already reacted with this Emoji");
 
         // The Reaction is removed, if the Reaction is selected again
-        removeReaction(messageId, userId, emoji, roomID);
+        removeReaction(messageId, userId, emoji, clanId, roomID, roomType);
     }
     else {
         // Track what Reactions are done by the User and increment the Reaction selected
@@ -414,8 +458,16 @@ export const addReaction = async (messageId, userId, emoji, roomID) => {
     }
 }
 
-export const removeReaction = async (messageId, userId, emoji, roomID) => {
-    const messageRef = doc(db, "rooms", roomID, "messages", messageId);
+export const removeReaction = async (messageId, userId, emoji, clanId, roomID, roomType) => {
+    let messageRef;
+
+    if (roomType == "direct") {
+        messageRef = doc(db, "rooms", roomID, "messages", messageId);
+    }
+    else if (roomType == "group") {
+        messageRef = doc(db, "clan", clanId, "groupChats", roomID, "messages", messageId);
+    }
+    
     const messageSnapshot = await getDoc(messageRef);
 
     if (!messageSnapshot.exists()) {
@@ -439,8 +491,15 @@ export const removeReaction = async (messageId, userId, emoji, roomID) => {
     await updateDoc(messageRef, updates);
 }
 
-export const listenToReactions = (roomID, onUpdate) => {
-    const messagesCollectionRef = collection(db, "rooms", roomID, "messages")
+export const listenToReactions = (clanId, roomID, roomType, onUpdate) => {
+    let messagesCollectionRef;
+
+    if (roomType == "direct") {
+        messagesCollectionRef = collection(db, "rooms", roomID, "messages");
+    }
+    else if (roomType == "group") {
+        messagesCollectionRef = collection(db, "clan", clanId, "groupChats", roomID, "messages");
+    }
   
   
     const unsubscribe = onSnapshot(messagesCollectionRef, (snapshot) => {
@@ -458,8 +517,16 @@ export const listenToReactions = (roomID, onUpdate) => {
     return unsubscribe;
   };
 
-export const getUserReactionsFromMessage = async (messageId, roomID, userId) => {
-    const messageRef = doc(db, "rooms", roomID, "messages", messageId);
+export const getUserReactionsFromMessage = async (messageId, clanId, roomID, roomType, userId) => {
+    
+    let messageRef;
+    if (roomType == "direct") {
+        messageRef = doc(db, "rooms", roomID, "messages", messageId);
+    }
+    else if (roomType == "group") {
+        messageRef = doc(db, "clan", clanId, "groupChats", roomID, "messages", messageId);
+    }
+
     const snap = await getDoc(messageRef);
 
      if (!snap.exists()) {
@@ -779,8 +846,16 @@ export const updateProfilePicture = async (userID, profilePicture) => {
     }
 }
 
-export const searchMessages = async (roomID, {username, startDate, endDate, searchInput}) => {
-    const messagesRef = collection(db, "rooms", roomID, "messages");
+export const searchMessages = async (clanId, roomID, roomType, {username, startDate, endDate, searchInput}) => {
+    
+    let messagesRef;
+    if (roomType == "direct") {
+        messagesRef = collection(db, "rooms", roomID, "messages");
+    }
+    else if (roomType == "group") {
+        messagesRef = collection(db, "clan", clanId, "groupChats", roomID, "messages");
+    }
+
 
     let q = query(messagesRef);
 
@@ -828,8 +903,15 @@ export const searchMessages = async (roomID, {username, startDate, endDate, sear
 }
 
 // Keeps track of which Replies that the User has choosen to not reply to and remove from the Reply List
-export const addRemovedReplyListMessageID = async (roomID, userID, messageID) => {
-    const docRef = doc(db, "rooms", roomID, "removedReplyMessageIDs", userID);
+export const addRemovedReplyListMessageID = async (clanId, roomID, roomType, userID, messageID) => {
+
+    let docRef;
+    if (roomType == "direct") {
+        docRef = doc(db, "rooms", roomID, "removedReplyMessageIDs", userID);
+    }
+    else if (roomType == "group") {
+        docRef = doc(db, "clan", clanId, "groupChats", roomID, "removedReplyMessageIDs", userID);
+    }
 
     await updateDoc(docRef, {
         // Add the Messsage without duplicates
@@ -845,8 +927,15 @@ export const addRemovedReplyListMessageID = async (roomID, userID, messageID) =>
     });
 }
 
-export const getUnRepliedMessages = async (roomID, currentUserID) => {
-    const messageRef = collection(db, "rooms", roomID, "messages");
+export const getUnRepliedMessages = async (clanId, roomID, roomType, currentUserID) => {
+
+    let messageRef;
+    if (roomType == "direct") {
+        messageRef = collection(db, "rooms", roomID, "messages");
+    }
+    else if (roomType == "group") {
+        messageRef = collection(db, "clan", clanId, "groupChats", roomID, "messages");
+    }
 
     // Get the Last Messages from 14 Days
     const q = query(messageRef, where("createdAt", ">=", Timestamp.fromDate(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000))));
@@ -857,7 +946,13 @@ export const getUnRepliedMessages = async (roomID, currentUserID) => {
     const allMessages = messageSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
 
     // Get removed message IDs for the current user
-    const removedDocRef = doc(db, "rooms", roomID, "removedReplyMessageIDs", currentUserID);
+    let removedDocRef;
+    if (roomType == "direct") {
+        removedDocRef = doc(db, "rooms", roomID, "removedReplyMessageIDs", currentUserID);
+    }
+    else if (roomType == "group") {
+        removedDocRef = doc(db, "clan", clanId, "groupChats", roomID, "removedReplyMessageIDs", currentUserID);
+    }
     const removedDocSnap = await getDoc(removedDocRef);
     const removedIDs = removedDocSnap.exists() ? removedDocSnap.data().removedIDs || [] : [];
 

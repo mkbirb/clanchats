@@ -18,7 +18,7 @@ import PresenceDisplay from "./PresenceDisplay.js";
 import YoutubeEmbed from "./YoutubeEmbed.js";
 
 
-const ReadMessage = ({roomType = "direct"}) => {
+const ReadMessage = ({clanID, roomType = "direct"}) => {
     const [messages, setMessages] = useState([]);
     const [editText, setEditText] = useState('');
     const [editingMessageId, setEditingMessageId] = useState(null);
@@ -26,7 +26,7 @@ const ReadMessage = ({roomType = "direct"}) => {
 
     const {replyTo, setReplyTo} = useContext(ReplyContext);
 
-    const originalMessage = useFetchOriginalMessage(replyTo);
+    const originalMessage = useFetchOriginalMessage(clanID, roomType, replyTo);
 
     // For the Reactions
     const [reactions, setReactions] = useState({});
@@ -57,7 +57,8 @@ const ReadMessage = ({roomType = "direct"}) => {
             console.log("Invalid or missing roomID, cannot fetch messages.");
             return;  
         }
-        const unsubscribe = retrieveMessages(setMessages, roomID);
+
+        const unsubscribe = retrieveMessages(setMessages, clanID, roomID, roomType);
 
         // Cleanup Function
         return () => unsubscribe();
@@ -65,7 +66,7 @@ const ReadMessage = ({roomType = "direct"}) => {
 
     // Updates the Messages Reactions based on Database
     useEffect(() => {
-      const unsubscribe = listenToReactions(roomID, (messageId, reactionData) => {
+      const unsubscribe = listenToReactions(clanID, roomID, roomType, (messageId, reactionData) => {
         setReactions(prev => ({
           ...prev,
           [messageId]: reactionData
@@ -96,12 +97,12 @@ const ReadMessage = ({roomType = "direct"}) => {
 
     // For the indicator that Message has been delivered to recipient
     useEffect(() => {
-      const unsubscribe = messageDeliveryTracking(roomID, userID);
+      const unsubscribe = messageDeliveryTracking(clanID, roomID, roomType, userID);
       return () => unsubscribe()
     }, [roomID, userID]);
 
     // // For the Indicator that a Message has been seen by recipient
-    useSeenMessages(messages, userID, roomID);
+    useSeenMessages(messages, userID, clanID, roomID, roomType);
 
     useEffect(() => {
       const fetchRoom = async () => {
@@ -172,16 +173,16 @@ const ReadMessage = ({roomType = "direct"}) => {
     }, [lastSeenMessageID, messages]);
 
     const handleDelete = (messageId) => {
-      deleteMessage(messageId, roomID);
+      deleteMessage(messageId, clanID, roomID, roomType);
     }
 
     const handleEdit = (messageId) => {
-      editMessage(messageId, editText, roomID);
+      editMessage(messageId, editText, clanID, roomID, roomType);
     }
 
     const handleReaction = async (messageId, emoji) => {
         try {
-          await addReaction(messageId, userID, emoji, roomID);
+          await addReaction(messageId, userID, emoji, clanID, roomID, roomType);
           setRefreshReactions(prev => !prev);
         }
         catch(error) {
@@ -273,7 +274,7 @@ const renderMessageWithCustomEmojis = (text) => {
                   <button onClick={() =>  {
                     setEditingMessageId(message.id); 
                     setEditText(message.text)}}> Edit </button>
-                  <RepliedMessage replyTo={message.replyTo} />
+                  <RepliedMessage clanID={clanID} roomType={roomType} replyTo={message.replyTo} />
 
                   {editingMessageId === message.id ? (
                     <>
@@ -328,7 +329,9 @@ const renderMessageWithCustomEmojis = (text) => {
                     messageId={message.id}
                     reactions={reactions[message.id] || {}}
                     reactionsOrder={message.reactionsOrder || []}
+                    clanID={clanID}
                     roomID={roomID}
+                    roomType={roomType}
                     userID={userID}
                     refreshTrigger={refreshReactions}
                   />

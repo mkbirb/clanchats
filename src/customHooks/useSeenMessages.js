@@ -3,12 +3,12 @@ import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { messageSeenTracking } from '../utils/messageTracking';
 import debounce from 'lodash/debounce';
 
-const useSeenMessages = (messages, currentUserID, roomID) => {
+const useSeenMessages = (messages, currentUserID, clanId, roomID, roomType) => {
     const observer = useRef(null);
     // Reuse the same function that has been created through UseCallback to optimise Performance
     // Debounce helps for optimisation as well
     const handleSeen = useCallback(debounce(async(seenMessagesIDs) => {
-        await messageSeenTracking(seenMessagesIDs, currentUserID, roomID)
+        await messageSeenTracking(seenMessagesIDs, currentUserID, clanId, roomID, roomType)
     }, 300), [currentUserID, roomID])
 
     // Enhance Performance by caching

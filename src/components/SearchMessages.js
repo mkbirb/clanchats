@@ -3,7 +3,7 @@ import Modal from 'react-modal';
 import { getSpecificUsersIDs, getUserByID, searchMessages } from "./firebaseConfig";
 import { useCurrentUser } from "../context/CurrentUserContext";
 
-const SearchMessages = () => {
+const SearchMessages = ({clanID, roomType}) => {
     const [searchModalViewed, setSearchModalViewed] = useState(false);
     const [searchInput, setSearchInput] = useState("");
     const [fromUser, setFromUser] = useState("");
@@ -18,7 +18,7 @@ const SearchMessages = () => {
         const retrieveMessagesSearched = async () => {
                 
             try {
-                const results = await searchMessages(roomID, {username: fromUser|| null, startDate: startDate || null, endDate: endDate || null, searchInput: searchInput || null});
+                const results = await searchMessages(clanID, roomID, roomType, {username: fromUser|| null, startDate: startDate || null, endDate: endDate || null, searchInput: searchInput || null});
                 setMessagesFound(results);
 
                 // Get the unique User IDs

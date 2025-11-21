@@ -26,9 +26,12 @@ const SeenIcon = ({message, currentUserID, lastSeenMessageID, showSeenIcon, user
 
     if (usersData.length === 0) return null;
 
+    // Get the Users to appear in the same order to prevnt flickering for the Seen User Icon
+    const orderedUsers = [...usersData].sort((a, b) => a.id.localeCompare(b.id));
+
     return (
         <div className="seen-icon flex gap-1">
-            {usersData.map(user => (
+            {orderedUsers.map(user => (
                 <div key={user.uid} className="relative group flex items-center justify-center">
                     <div
                     className="rounded-full bg-gray-300 text-white flex items-center justify-center w-5 h-5 text-xs overflow-hidden"

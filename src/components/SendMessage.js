@@ -8,7 +8,7 @@ import EmojiPicker from './EmojiPicker.js';
 import { jumpToMessage } from "../utils/jumpToMessage.js";
 import { useTypingUsers } from "../customHooks/useTypingUsers.js";
 
-const SendMessage = ({roomType = "direct", onReplySent}) => {
+const SendMessage = ({clanID, roomType = "direct", onReplySent}) => {
     const [message, setMessage] = useState("");
     const { userID, roomID, user} = useCurrentUser();
     const [image, setImage] = useState(null);
@@ -20,7 +20,7 @@ const SendMessage = ({roomType = "direct", onReplySent}) => {
 
     const expGivenPerMessage = 5;
 
-    const [originalMessage, setOriginalMessage] = useFetchOriginalMessage(replyTo);
+    const [originalMessage, setOriginalMessage] = useFetchOriginalMessage(clanID, roomType, replyTo);
 
     // When the User sends a message, page would scroll down to the bottom of Chat Messages
     const bottomRef = useRef(null);     
@@ -57,7 +57,9 @@ const SendMessage = ({roomType = "direct", onReplySent}) => {
             onReplySent();
         }
 
-        await createMessage(message, userID, roomID, seen, imageUrl, replyTo); 
+        console.log("Vitamin D", clanID);
+
+        await createMessage(message, userID, roomID, roomType, clanID, seen, imageUrl, replyTo); 
 
         // Scroll to bottom of Messages
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

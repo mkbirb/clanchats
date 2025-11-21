@@ -2,10 +2,16 @@ import { onSnapshot, writeBatch, arrayUnion, doc, query, collection, serverTimes
 import { db } from "../firebase";
 
 // Keeps track of the Messages being Delivered to the Recipient
-export function messageDeliveryTracking(roomID, currentUserID) {
-    const messageRef = query(
-        collection(db, `rooms/${roomID}/messages`)
-    );
+export function messageDeliveryTracking(clanID, roomID, roomType, currentUserID) {
+
+    let messageRef;
+
+    if (roomType === "direct") {
+        messageRef = query(collection(db, `rooms/${roomID}/messages`));
+    }
+    else if (roomType === "group") {
+        messageRef = query(collection(db, `clan/${clanID}/groupChats/${roomID}/messages`));
+    }
 
     const unsubscribe = onSnapshot(messageRef, (snapshot) => {
         const batch = writeBatch(db);
@@ -28,7 +34,7 @@ export function messageDeliveryTracking(roomID, currentUserID) {
     return unsubscribe;
 }
 
-export async function messageSeenTracking(messages, currentUserID, roomID) {
+export async function messageSeenTracking(messages, currentUserID, clanId, roomID, roomType) {
     const unseenMessages = messages.filter(
         msg => !msg.seenBy?.[currentUserID]
     )
@@ -58,9 +64,15 @@ export async function messageSeenTracking(messages, currentUserID, roomID) {
             console.error(`currentUserID is undefined — cannot track seenBy.`);
             return;
         }
+        
+        let messageRef;
 
-        const messageRef = doc(db, "rooms", roomID, "messages", msg.id);
-
+        if (roomType === "direct") {
+            messageRef = doc(db, "rooms", roomID, "messages", msg.id);
+        }
+        else if (roomType === "group") {
+            messageRef = doc(db, "clan", clanId, "groupChats", roomID, "messages", msg.id);
+        }
         // Check if the Message is still there to SeenTrack
         try {
             const snap = await getDoc(messageRef);

@@ -106,10 +106,10 @@ const chat = () => {
                                     // Display the Message Chat, when a User has been selected
                                     roomID ? (
                                         <>
-                                            <ReadMessage roomType={roomType} />
-                                            <SendMessage roomType={roomType} onReplySent={refreshReplyList}/>
-                                            <ReplyList refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
-                                            <SearchMessages />
+                                            <ReadMessage clanID={clanData.id} roomType={roomType} />
+                                            <SendMessage clanID={clanData.id} roomType={roomType} onReplySent={refreshReplyList}/>
+                                            <ReplyList clanID={clanData.id} roomType={roomType} refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
+                                            <SearchMessages clanID={clanData.id} roomType={roomType} />
                                         </>
 
                                     ) : (

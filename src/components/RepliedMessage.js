@@ -1,8 +1,8 @@
 import React from "react";
 import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 
-const RepliedMessage = ({ replyTo }) => {
-    const [originalMessage] = useFetchOriginalMessage(replyTo);
+const RepliedMessage = ({clanID, roomType, replyTo }) => {
+    const [originalMessage] = useFetchOriginalMessage(clanID, roomType, replyTo);
   
     if (!replyTo || !originalMessage) return null;
   

@@ -2,7 +2,7 @@ import React, { useState, useEffect} from "react";
 import {addReaction, getUserReactionsFromMessage, removeReaction} from "./firebaseConfig.js";
 
 // For the displaying of the Reactions for each Message
-const ReactionsDisplay = ({ messageId, reactions, reactionsOrder = [], roomID, userID, refreshTrigger}) => {
+const ReactionsDisplay = ({ messageId, reactions, reactionsOrder = [], clanID, roomID, roomType, userID, refreshTrigger}) => {
 
     const [userReactions, setUserReactions] = useState([]);
 
@@ -11,7 +11,7 @@ const ReactionsDisplay = ({ messageId, reactions, reactionsOrder = [], roomID, u
 
     const handleReactionRemoval = async (emoji) => {
         try {
-            await removeReaction(messageId, userID, emoji, roomID);
+            await removeReaction(messageId, userID, emoji, clanID, roomID, roomType);
 
             // Immediately Refresh the User Reactions, so correctly displays which is no longer form user
             setUserReactions((prev) => prev.filter(e => e !== emoji));
@@ -23,7 +23,7 @@ const ReactionsDisplay = ({ messageId, reactions, reactionsOrder = [], roomID, u
 
     const handleReactionAdd = async (emoji) => {
         try {
-            await addReaction(messageId, userID, emoji, roomID);
+            await addReaction(messageId, userID, emoji, clanID, roomID, roomType);
             
             // Immediately Refresh the User Reactions, so correctly displays which is now the users
             setUserReactions((prev) => [...prev, emoji]);
@@ -36,7 +36,7 @@ const ReactionsDisplay = ({ messageId, reactions, reactionsOrder = [], roomID, u
     useEffect(() => {
         const fetchUserReacted = async () => {
             try {
-                const userReactionsFromDatabase = await getUserReactionsFromMessage(messageId, roomID, userID);
+                const userReactionsFromDatabase = await getUserReactionsFromMessage(messageId, clanID, roomID, roomType, userID);
                 setUserReactions(userReactionsFromDatabase);
                 console.log("UserReacted From Database ", userReactionsFromDatabase);
             } 
