@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID, retrieveRoomBasedOnID, getCachedUserByID, createRetrieveGroupRoom, retrieveClan} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
@@ -212,6 +212,25 @@ const ReadMessage = ({clanID, roomType = "direct"}) => {
       return `${formattedDate} ${formattedTime}`
     }
 
+    // Get a Map of the last seen Message IDs for the Group Chat
+    const userLastSeenMap = useMemo(() => {
+      const map = {};
+
+      for (const msg of messages) {
+        if (!msg.seenBy) continue;
+
+        // Go through the Users who has seen the message
+        for (const uid of Object.keys(msg.seenBy)) {
+          // Skip the current user
+          if (uid === userID) continue;
+
+          map[uid] = msg.id;
+        }
+      }
+
+      return map;
+    }, [messages, userID])
+
 const renderMessageWithCustomEmojis = (text) => {
   return text
     .split(/(:\w+:)/g) 
@@ -294,12 +313,23 @@ const renderMessageWithCustomEmojis = (text) => {
                       <YoutubeEmbed textMessage={message.text} />
                       {/* {console.log("Rendering message ID:", message.id)}
                       {console.log("Last seen message ID:", lastSeenMessageID)} */}
-                      <SeenIcon 
-                        message={message} 
-                        currentUserID={userID} 
-                        lastSeenMessageID={lastStableSeenID} 
-                        showSeenIcon={message.id === lastStableSeenID}
-                        userMap={participantData}/>
+                      {roomType === "direct" && (
+                        <SeenIcon 
+                          message={message} 
+                          currentUserID={userID} 
+                          lastSeenMessageID={lastStableSeenID} 
+                          showSeenIcon={message.id === lastStableSeenID}
+                          userMap={participantData}/>
+                      )}
+
+                      {roomType === "group" && (
+                        <SeenIcon
+                          message={message}
+                          currentUserID={userID}
+                          groupLastSeen={userLastSeenMap}   
+                          userMap={participantData}
+                        />
+                      )}
                     </div>
                     )}
 
