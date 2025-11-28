@@ -37,17 +37,32 @@ export const  createMessage = async (text, userId, roomId, roomType, clanId = nu
         }
 
         let messageRef;
+        let roomRef;
 
         if (roomType == "direct") {
             // Add the Message to the Firestore
             messageRef = collection(db, "rooms", roomId, "messages");
+            
+            roomRef = doc(db, "rooms", roomId);
         }
         else if (roomType == "group") {
             messageRef = collection(db, "clan", clanId, "groupChats", roomId, "messages");
-
+            
+            roomRef = doc(db, "clan", clanId, "groupChats", roomId);
         }
 
-        await addDoc(messageRef, messagePayLoad);
+        // Add the new Message to Database
+        const newMessageDocRef = await addDoc(messageRef, messagePayLoad);
+
+        // Also update the Latest Message that would have been sent
+        const latestMsg = {
+            text: messagePayLoad.text,
+            createdAt: serverTimestamp(),
+            userId: messagePayLoad.userID,
+            messageID: newMessageDocRef.id 
+        };
+
+        await updateDoc(roomRef, { latestMessage: latestMsg });
     }
     catch(error) {
         alert("Error creating the Message: " + error);
@@ -98,14 +113,79 @@ export const retrieveMessages = (setMessages, clanId, roomID, roomType) => {
     
 }
 
-export const deleteMessage = async (messageId, clanID, roomID, roomType) => {
+export const deleteMessage = async (messageID, clanID, roomID, roomType) => {
     try {
 
         if (roomType === "direct") {
-            await deleteDoc(doc(db, "rooms", roomID, "messages", messageId));
+            await deleteDoc(doc(db, "rooms", roomID, "messages", messageID));
+
+            // Check if the message deleted was the latest message
+            const roomRef = doc(db, "rooms", roomID);
+            const roomSnap = await getDoc(roomRef);
+            const roomData = roomSnap.data();
+
+            if (roomData.latestMessage?.messageID === messageID) {
+                // Need to update latestMessage with the new latest message if the latest message has been deleted
+                const messagesSnap = await getDocs(
+                    query(collection(db, "rooms", roomID, "messages"), orderBy("createdAt", "desc"), limit(1))
+                );
+
+                const latestMsgDoc = messagesSnap.docs[0]?.data();
+                
+                // Get only the desired attributes from the Latest Message Doc
+                const newLatest = latestMsgDoc
+                ?   {
+                        text: latestMsgDoc.text,
+                        createdAt: latestMsgDoc.createdAt,
+                        userId: latestMsgDoc.userID,
+                        messageID: messagesSnap.docs[0].id 
+                    }
+                : null;
+
+
+                if (newLatest) {
+                    await updateDoc(roomRef, { latestMessage: newLatest });
+                } 
+                else {
+                    // No messages left, clear latestMessage
+                    await updateDoc(roomRef, { latestMessage: null });
+                }
+            }
+
         }
         else if (roomType === "group") {
-            await deleteDoc(doc(db, "clan", clanID, "groupChats", roomID, "messages", messageId));
+            await deleteDoc(doc(db, "clan", clanID, "groupChats", roomID, "messages", messageID));
+
+            const groupRoomRef = doc(db, "clan", clanID, "groupChats", roomID);
+            const groupRoomSnap = await getDoc(groupRoomRef);
+            const groupRoomData = groupRoomSnap.data();
+
+            if (groupRoomData.latestMessage?.messageID === messageID) {
+                // Need to update latestMessage with the new latest message if the latest message has been deleted
+                const messagesSnap = await getDocs(
+                    query(collection(db, "clan", clanID, "groupChats", roomID, "messages"), orderBy("createdAt", "desc"), limit(1))
+                );
+
+                const latestMsgDoc = messagesSnap.docs[0]?.data();
+                
+                // Get only the desired attributes from the Latest Message Doc
+                const newLatest = latestMsgDoc
+                ?   {
+                        text: latestMsgDoc.text,
+                        createdAt: latestMsgDoc.createdAt,
+                        userId: latestMsgDoc.userID,
+                        messageID: messagesSnap.docs[0].id 
+                    }
+                : null;
+
+                if (newLatest) {
+                    await updateDoc(groupRoomRef, { latestMessage: newLatest });
+                } 
+                else {
+                    // No messages left, clear latestMessage
+                    await updateDoc(groupRoomRef, { latestMessage: null });
+                }
+            }
         }
         console.log("Message was able to be deleted")
     }
@@ -140,6 +220,22 @@ export const editMessage = async (messageId, newText, clanID, roomID, roomType) 
                     text: newText,
                     editedAt: Date.now()
                 })
+
+                if (roomType === "direct") {
+                    const roomRef = doc(db, "rooms", roomID);
+                    await updateDoc(roomRef, {
+                        "latestMessage.text": newText,
+                        "latestMessage.editedAt": Date.now()
+                    });
+
+                } 
+                else if (roomType === "group") {
+                    const groupRoomRef = doc(db, "clan", clanID, "groupChats", roomID);
+                    await updateDoc(groupRoomRef, {
+                        "latestMessage.text": newText,
+                        "latestMessage.editedAt": Date.now()
+                    });
+                }
                 console.log("Message was edited");
             }
             else {
@@ -1643,5 +1739,185 @@ export const createRetrieveGroupRoom = async (clanId) => {
     
     return {
          id: newGroupRoomSnap.id, ...newGroupRoomSnap.data()
+    };
+}
+
+export const getLatestMessage = async (roomID, roomType, clanID = null) => {
+    
+    let messageRef;
+
+    if (roomType === "direct") {
+        messageRef = collection(db, "rooms", roomID, "messages");
+    }
+    else if (roomType === "group") {
+        messageRef = collection(db, "clan", clanID, "groupChats", roomId, "messages");
+    }
+
+    const q = query(messageRef, orderBy("createdAt", "desc"), limit(1));
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) return null;
+
+    return {id: snapshot.docs[0].id, ...snapshot.docs[0].data()}
+
+}
+
+// Also returns the latest messages from each of the rooms
+export const loadChatList = async (userID, clanID, clanData) => {
+    let chatList = [];
+    let groupChatList = [];
+
+    // For the Caching of the User Profiles
+    let userMap = {};
+
+    const ensureUserLoaded = async (uid) => {
+        if (!uid || userMap[uid]) return;
+        const u = await getUserByID(uid);
+        if (u) userMap[uid] = { ...u, id: uid };
+    }
+
+    // Get all of the Direct Rooms from the User
+    const userRef = doc(db, "users", userID);
+
+    const q1 = query(collection(db, "rooms"), where("person1", "==", userRef));
+    const q2 = query(collection(db, "rooms"), where("person2", "==", userRef));
+
+    const snap1 = await getDocs(q1);
+    const snap2 = await getDocs(q2);
+
+    const directRoomsSnap = [...snap1.docs, ...snap2.docs];
+
+
+    for (let roomDoc of directRoomsSnap) {
+        const data = roomDoc.data();
+
+        // Get the other person in the room
+        // Get the Reference first
+        const otherRef = data.person1.id === userID ? data.person2 : data.person1;
+
+        // Then convert to String
+        const otherID = otherRef.id;
+
+        // Only include if otherID is in the clan
+        if (!clanData.members.includes(otherID)) continue;
+
+        await ensureUserLoaded(otherID);
+
+        chatList.push({
+            roomId: roomDoc.id,
+            roomType: "direct",
+            otherUserID: otherID,
+            otherUser: userMap[otherID],
+            latestMessage: data.latestMessage || null,   
+        });
+    }
+
+    // For the Group Chats
+    const groupSnap = await getDocs(collection(db, "clan", clanID, "groupChats"));
+
+    for (let gc of groupSnap.docs) {
+        const data = gc.data();
+        groupChatList.push({
+            roomId: gc.id,
+            roomType: "group",
+            clanId: clanID,
+            latestMessage: data.latestMessage || null, 
+        });
+    }
+
+    return {chatList, groupChatList, userMap};
+}
+
+export const listenToChatList = (userID, clanID, clanData, setChatList, setGroupChatList, setUserMap) => {
+    let userMap = {};
+
+    // For Caching
+    const ensureUserLoaded = async (uid) => {
+        if (!uid || userMap[uid]) return;
+        const u = await getCachedUserByID(uid);
+        if (u) userMap[uid] = { ...u, id: uid };
+        setUserMap({ ...userMap }); 
+    };
+
+    // Listen to the Direct Rooms where the Current User can either be Person 1 or Person 2 from the Rooms
+    const directRoomsQuery1 = query(collection(db, "rooms"), where("person1", "==", doc(db, "users", userID)));
+    const directRoomsQuery2 = query(collection(db, "rooms"), where("person2", "==", doc(db, "users", userID)));
+
+    // Realtime Listening to the Latest Message to each of the rooms
+    const unsubscribeDirect1 = onSnapshot(directRoomsQuery1, async (snap) => { 
+        const updatedList = [];
+        for (let docSnap of snap.docs) {
+            const data = docSnap.data();
+            const otherRef = data.person1.id === userID ? data.person2 : data.person1;
+            const otherID = otherRef.id;
+
+            // Only include if otherID is in the clan
+            if (!clanData.members.includes(otherID)) continue;
+
+            // Load the UserData
+            await ensureUserLoaded(otherID);
+
+            updatedList.push({
+                roomId: docSnap.id,
+                roomType: "direct",
+                otherUserID: otherID,
+                otherUser: userMap[otherID],
+                latestMessage: data.latestMessage || null,
+            });
+        }
+
+        // Merge the new updated rooms by filtering out the old direct rooms
+        setChatList((prev) => [...prev.filter(r => r.roomType !== "direct"), ...updatedList]);
+    });
+
+    const unsubscribeDirect2 = onSnapshot(directRoomsQuery2, async (snap) => {
+        const updatedList = [];
+        for (let docSnap of snap.docs) {
+            const data = docSnap.data();
+            const otherRef = data.person1.id === userID ? data.person2 : data.person1;
+            const otherID = otherRef.id;
+
+            // Only include if otherID is in the clan
+            if (!clanData.members.includes(otherID)) continue;
+
+            await ensureUserLoaded(otherID);
+
+            updatedList.push({
+                roomId: docSnap.id,
+                roomType: "direct",
+                otherUserID: otherID,
+                otherUser: userMap[otherID],
+                latestMessage: data.latestMessage || null,
+            });
+        }
+        // Merge the new updated rooms by filtering out the old direct rooms
+        setChatList((prev) => [...prev.filter(r => r.roomType !== "direct"), ...updatedList]);
+    });
+
+    // Listen to the Group Chats for the Clans as well
+    const groupQuery = collection(db, "clan", clanData.id, "groupChats");
+    const unsubscribe = onSnapshot(groupQuery, (snap) => {
+        const updatedRoom = snap.docs[0]?.data()
+            ? {
+                roomId: snap.docs[0].id,
+                roomType: "group",
+                clanID: clanData.id,
+                roomName: snap.docs[0].data().roomName,
+                latestMessage: snap.docs[0].data().latestMessage || null,
+            }
+            : null;
+
+        if (!updatedRoom) return;
+
+        setGroupChatList([updatedRoom]);
+    });
+
+
+    // Return unsubscribe function to clean up listeners
+    return () => {
+        unsubscribeDirect1();
+        unsubscribeDirect2();
+        unsubscribe();
     };
 }

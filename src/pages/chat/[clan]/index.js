@@ -96,9 +96,7 @@ const chat = () => {
                 clanData ? (
                     <>
                         <div className="flex flex-2">
-                            <div>
-                                <button onClick={() => {navigateTo(router, "DASHBOARD"), changeRoomID(null) }}> To Dashboard </button>
-                                <h1 className="font-mono text-3xl font-bold text-blue-600"> Clan: {clanData.name}!</h1>
+                            <div className="w-[30%]">
                                 <ChatList clanData={clanData} onSelectDirectRoom={handleSelectDirectRoom} onSelectGroupChat={handleGroupChatClick} />
                             </div>
                             <div>
