@@ -1847,7 +1847,6 @@ export const listenToChatList = (userID, clanID, clanData, setChatList, setGroup
 
     // Process direct rooms snapshot
     const processSnapshot = async (snap) => {
-        // Update the map first
         for (let docSnap of snap.docs) {
             const data = docSnap.data();
             const otherRef = data.person1.id === userID ? data.person2 : data.person1;
@@ -1857,26 +1856,43 @@ export const listenToChatList = (userID, clanID, clanData, setChatList, setGroup
 
             await ensureUserLoaded(otherID);
 
-            directRoomsMap[docSnap.id] = {
+            const updatedRoom = {
                 roomId: docSnap.id,
                 roomType: "direct",
                 otherUserID: otherID,
                 otherUser: userMap[otherID],
                 latestMessage: data.latestMessage || null,
             };
-        }
 
-        const mergedRooms = Object.values(directRoomsMap);
+            setChatList(prev => {
+                // Find the Index of the Room that has changed
+                const idx = prev.findIndex(r => r.roomId === updatedRoom.roomId);
 
-        setChatList(prev => {
-            const updatedPrev = mergedRooms.map(m => {
-                const existing = prev.find(r => r.roomId === m.roomId);
-                return existing ? { ...existing, ...m } : m;
+                // If it is just the new room then add it
+                if (idx === -1) return [...prev, updatedRoom]; 
+                const currentRoom = prev[idx];
+
+                // If the timestamp has not changed then return the old array which prevents
+                // Unneeded Rendering
+                if (currentRoom.latestMessage?.createdAt?.seconds === updatedRoom.latestMessage?.createdAt?.seconds) return prev;
+                
+                // Replace just the updated room
+                const newList = [...prev];
+                newList[idx] = { ...currentRoom, latestMessage: updatedRoom.latestMessage };
+
+                // Do Bubble Sort to move the updated room upwards if its message is newer
+                if (idx > 0) {
+                    let newIndex = idx;
+                    while (newIndex > 0 && (newList[newIndex].latestMessage?.createdAt?.seconds || 0) >
+                        (newList[newIndex - 1].latestMessage?.createdAt?.seconds || 0)) {
+                        [newList[newIndex], newList[newIndex - 1]] = [newList[newIndex - 1], newList[newIndex]];
+                        newIndex--;
+                    }
+                }
+
+                return newList;
             });
-
-            const sorted = sortRoomsByLatest(updatedPrev, prev);
-            return sorted ?? prev; 
-        });
+        }
     };
 
     // Queries for direct rooms
