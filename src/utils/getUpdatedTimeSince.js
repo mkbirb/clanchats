@@ -21,9 +21,19 @@ export const getUpdatedTimeSince = (timestamp) => {
         return getTimeFromFirestoreTimestamp(timestamp);
     }
 
-    // Check if within the same week to then dusplay the Day Only
-    const diff = now - date; 
-    if (diff < 7 * 24 * 60 * 60 * 1000) { 
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const n = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+
+    const diffDays = (n - d) / (1000 * 60 * 60 * 24);
+
+    // Check for Yesterday
+    if (diffDays === 1) {
+        return "Yesterday";
+    }
+
+     // Check if within the same week to then dusplay the Day Only
+    if (diffDays < 7) { 
         return date.toLocaleDateString(undefined, { weekday: 'short' });
     }
 

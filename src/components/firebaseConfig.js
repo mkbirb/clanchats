@@ -5,6 +5,7 @@ import { createServerSearchParamsForServerPage } from 'next/dist/server/request/
 import { error } from 'ajv/dist/vocabularies/applicator/dependencies';
 import { levelDefinition, maxLevel } from './definitions/LevelDefinitions';
 import { child, off, onValue, ref } from 'firebase/database';
+import { sortRoomsByLatest } from '../utils/sortRoomByLatest';
 
 // Used for User Caching
 const userCache = new Map();
@@ -1813,6 +1814,9 @@ export const loadChatList = async (userID, clanID, clanData) => {
         });
     }
 
+    // Also sort by Rooms with latest message sent
+    chatList = sortRoomsByLatest(chatList);
+
     // For the Group Chats
     const groupSnap = await getDocs(collection(db, "clan", clanID, "groupChats"));
 
@@ -1831,93 +1835,76 @@ export const loadChatList = async (userID, clanID, clanData) => {
 
 export const listenToChatList = (userID, clanID, clanData, setChatList, setGroupChatList, setUserMap) => {
     let userMap = {};
+    let directRoomsMap = {};
 
-    // For Caching
+    // Caching function to avoid repeated fetches
     const ensureUserLoaded = async (uid) => {
         if (!uid || userMap[uid]) return;
         const u = await getCachedUserByID(uid);
         if (u) userMap[uid] = { ...u, id: uid };
-        setUserMap({ ...userMap }); 
+        setUserMap({ ...userMap });
     };
 
-    // Listen to the Direct Rooms where the Current User can either be Person 1 or Person 2 from the Rooms
+    // Process direct rooms snapshot
+    const processSnapshot = async (snap) => {
+        // Update the map first
+        for (let docSnap of snap.docs) {
+            const data = docSnap.data();
+            const otherRef = data.person1.id === userID ? data.person2 : data.person1;
+            const otherID = otherRef.id;
+
+            if (!clanData.members.includes(otherID)) continue;
+
+            await ensureUserLoaded(otherID);
+
+            directRoomsMap[docSnap.id] = {
+                roomId: docSnap.id,
+                roomType: "direct",
+                otherUserID: otherID,
+                otherUser: userMap[otherID],
+                latestMessage: data.latestMessage || null,
+            };
+        }
+
+        const mergedRooms = Object.values(directRoomsMap);
+
+        setChatList(prev => {
+            const updatedPrev = mergedRooms.map(m => {
+                const existing = prev.find(r => r.roomId === m.roomId);
+                return existing ? { ...existing, ...m } : m;
+            });
+
+            const sorted = sortRoomsByLatest(updatedPrev, prev);
+            return sorted ?? prev; 
+        });
+    };
+
+    // Queries for direct rooms
     const directRoomsQuery1 = query(collection(db, "rooms"), where("person1", "==", doc(db, "users", userID)));
     const directRoomsQuery2 = query(collection(db, "rooms"), where("person2", "==", doc(db, "users", userID)));
 
-    // Realtime Listening to the Latest Message to each of the rooms
-    const unsubscribeDirect1 = onSnapshot(directRoomsQuery1, async (snap) => { 
-        const updatedList = [];
-        for (let docSnap of snap.docs) {
-            const data = docSnap.data();
-            const otherRef = data.person1.id === userID ? data.person2 : data.person1;
-            const otherID = otherRef.id;
+    // Subscribe to direct rooms
+    const unsubscribeDirect1 = onSnapshot(directRoomsQuery1, processSnapshot);
+    const unsubscribeDirect2 = onSnapshot(directRoomsQuery2, processSnapshot);
 
-            // Only include if otherID is in the clan
-            if (!clanData.members.includes(otherID)) continue;
-
-            // Load the UserData
-            await ensureUserLoaded(otherID);
-
-            updatedList.push({
-                roomId: docSnap.id,
-                roomType: "direct",
-                otherUserID: otherID,
-                otherUser: userMap[otherID],
-                latestMessage: data.latestMessage || null,
-            });
-        }
-
-        // Merge the new updated rooms by filtering out the old direct rooms
-        setChatList((prev) => [...prev.filter(r => r.roomType !== "direct"), ...updatedList]);
-    });
-
-    const unsubscribeDirect2 = onSnapshot(directRoomsQuery2, async (snap) => {
-        const updatedList = [];
-        for (let docSnap of snap.docs) {
-            const data = docSnap.data();
-            const otherRef = data.person1.id === userID ? data.person2 : data.person1;
-            const otherID = otherRef.id;
-
-            // Only include if otherID is in the clan
-            if (!clanData.members.includes(otherID)) continue;
-
-            await ensureUserLoaded(otherID);
-
-            updatedList.push({
-                roomId: docSnap.id,
-                roomType: "direct",
-                otherUserID: otherID,
-                otherUser: userMap[otherID],
-                latestMessage: data.latestMessage || null,
-            });
-        }
-        // Merge the new updated rooms by filtering out the old direct rooms
-        setChatList((prev) => [...prev.filter(r => r.roomType !== "direct"), ...updatedList]);
-    });
-
-    // Listen to the Group Chats for the Clans as well
+    // Subscribe to group chats
     const groupQuery = collection(db, "clan", clanData.id, "groupChats");
     const unsubscribe = onSnapshot(groupQuery, (snap) => {
-        const updatedRoom = snap.docs[0]?.data()
-            ? {
-                roomId: snap.docs[0].id,
-                roomType: "group",
-                clanID: clanData.id,
-                roomName: snap.docs[0].data().roomName,
-                latestMessage: snap.docs[0].data().latestMessage || null,
-            }
-            : null;
-
-        if (!updatedRoom) return;
-
-        setGroupChatList([updatedRoom]);
+        const list = snap.docs.map(doc => ({
+            roomId: doc.id,
+            roomType: "group",
+            clanID: clanID,
+            roomName: doc.data().roomName,
+            latestMessage: doc.data().latestMessage || null
+        }));
+        setGroupChatList(list);
     });
 
-
-    // Return unsubscribe function to clean up listeners
+    // Cleanup listeners
     return () => {
         unsubscribeDirect1();
         unsubscribeDirect2();
         unsubscribe();
     };
-}
+};
+
