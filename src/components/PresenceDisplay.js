@@ -5,7 +5,7 @@ import { subscribeToUserPresenceAndStatus } from "./firebaseConfig";
 import { getDisplayStatus } from "../utils/getDisplayStatus";
 import { useUserRTDBPresence } from "../customHooks/useUserRTDBPresence";
 
-const PresenceDisplay = ({userID}) => {
+const PresenceDisplay = ({userID, shortened = false}) => {
     const [presence, setPresence] = useState("offline");
     const [status, setStatus] = useState("online");
 
@@ -58,28 +58,52 @@ const PresenceDisplay = ({userID}) => {
 
     return (
         <>
-            <span> 
-                Status of user: 
-                {displayStatus === "online" && (
-                    <p> 🟢 Online </p>
-                )}
-                {displayStatus === "idle" && (
-                    <p>🟡 Idle</p>
-                )}
-                {displayStatus === "away" && (
-                    <p> 🟠 Away from Home</p>
-                )}
-                {displayStatus === "slow" && (
-                    <p> 🔵 Slow Replies </p>
-                )}
-                {displayStatus === "doNotDisturb" && (
-                    <p> 🔴 Do Not Disturb </p>
-                )}
-                {displayStatus === "offline" && (
-                    <p> 🔘 Offline </p>
-                )}
+            {(shortened == true) && (
+                <span className="text-2xl">
+                    {displayStatus === "online" && (
+                        <p> 🟢 </p>
+                    )}
+                    {displayStatus === "idle" && (
+                        <p> 🟡 </p>
+                    )}
+                    {displayStatus === "away" && (
+                        <p> 🟠 </p>
+                    )}
+                    {displayStatus === "slow" && (
+                        <p> 🔵 </p>
+                    )}
+                    {displayStatus === "doNotDisturb" && (
+                        <p> 🔴 </p>
+                    )}
+                    {displayStatus === "offline" && (
+                        <p> 🔘 </p>
+                    )}
+                </span>
+            )}
+            {(shortened == false) && (
+                <span> 
+                    Status of user: 
+                    {displayStatus === "online" && (
+                        <p> 🟢 Online </p>
+                    )}
+                    {displayStatus === "idle" && (
+                        <p> 🟡 Idle</p>
+                    )}
+                    {displayStatus === "away" && (
+                        <p> 🟠 Away from Home</p>
+                    )}
+                    {displayStatus === "slow" && (
+                        <p> 🔵 Slow Replies </p>
+                    )}
+                    {displayStatus === "doNotDisturb" && (
+                        <p> 🔴 Do Not Disturb </p>
+                    )}
+                    {displayStatus === "offline" && (
+                        <p> 🔘 Offline </p>
+                    )}
 
-            </span>
+                </span>
+            )}
         </>
     )
 }

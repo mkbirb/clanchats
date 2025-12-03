@@ -56,12 +56,37 @@ export const  createMessage = async (text, userId, roomId, roomType, clanId = nu
         const newMessageDocRef = await addDoc(messageRef, messagePayLoad);
 
         // Also update the Latest Message that would have been sent
-        const latestMsg = {
-            text: messagePayLoad.text,
-            createdAt: serverTimestamp(),
-            userId: messagePayLoad.userID,
-            messageID: newMessageDocRef.id 
-        };
+        let latestMsg;
+        if (text != null) {
+            if (imageUrl != null) {
+                // If text not empty and Image not empty then just display text for Latest Message
+                latestMsg = {
+                    text: messagePayLoad.text,
+                    imageURL: imageUrl,
+                    createdAt: serverTimestamp(),
+                    userId: messagePayLoad.userID,
+                    messageID: newMessageDocRef.id 
+                };
+            }
+            else {
+                latestMsg = {
+                    text: messagePayLoad.text,
+                    imageURL: null,
+                    createdAt: serverTimestamp(),
+                    userId: messagePayLoad.userID,
+                    messageID: newMessageDocRef.id 
+                };
+            }
+        }
+        else if (imageUrl != null) {
+            latestMsg = {
+                text: messagePayLoad.text,
+                imageURL: imageUrl,
+                createdAt: serverTimestamp(),
+                userId: messagePayLoad.userID,
+                messageID: newMessageDocRef.id 
+            };
+        }
 
         await updateDoc(roomRef, { latestMessage: latestMsg });
     }
@@ -137,6 +162,7 @@ export const deleteMessage = async (messageID, clanID, roomID, roomType) => {
                 const newLatest = latestMsgDoc
                 ?   {
                         text: latestMsgDoc.text,
+                        imageURL: latestMsgDoc.imageURL,
                         createdAt: latestMsgDoc.createdAt,
                         userId: latestMsgDoc.userID,
                         messageID: messagesSnap.docs[0].id 
@@ -173,6 +199,7 @@ export const deleteMessage = async (messageID, clanID, roomID, roomType) => {
                 const newLatest = latestMsgDoc
                 ?   {
                         text: latestMsgDoc.text,
+                        imageURL: latestMsgDoc.imageURL,
                         createdAt: latestMsgDoc.createdAt,
                         userId: latestMsgDoc.userID,
                         messageID: messagesSnap.docs[0].id 

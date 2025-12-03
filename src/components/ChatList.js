@@ -6,8 +6,9 @@ import DashboardButton from "./DashboardButton";
 import ClanHomeIcon from '../images/clanHomeIcon.png';
 import Image from "next/image";
 import { getUpdatedTimeSince } from "../utils/getUpdatedTimeSince";
+import PresenceDisplay from "./PresenceDisplay";
 
-const ChatList = ({clanData, onSelectDirectRoom, onSelectGroupChat}) => {
+const ChatList = ({clanData, currentRoomID, onSelectDirectRoom, onSelectGroupChat}) => {
     const { userID, user, changeRoomID} = useCurrentUser(); 
     const [memberInfo, setMemberInfo] = useState([]);
     const [chatList, setChatList] = useState([]);
@@ -33,7 +34,7 @@ const ChatList = ({clanData, onSelectDirectRoom, onSelectGroupChat}) => {
         const unsubscribe = listenToChatList(user.id, clanData.id, clanData, setChatList, setGroupChatList, setMemberInfo);
         return () => unsubscribe();
     }, [user.id, clanData]);
-
+    
 
     return (
         <> 
@@ -52,25 +53,64 @@ const ChatList = ({clanData, onSelectDirectRoom, onSelectGroupChat}) => {
                 </div>
                 {
                     groupChatList.map((room) => (
-                        <div key={room.roomId} onClick={() => onSelectGroupChat(clanData.id)}>
-                            <div>
-                                <p className="font-bold"> Group Chat </p>
-                                <p>{room.latestMessage?.text || ""}</p>
-                                <p>{getUpdatedTimeSince(room.latestMessage?.createdAt)}</p>
-                            </div>
+                        <div 
+                            key={room.roomId} 
+                            onClick={() => onSelectGroupChat(clanData.id)} 
+                            className={`flex flex-row cursor-pointer items-center w-full !p-2
+                                        ${currentRoomID === room.roomId ? "bg-green-200" : "bg-transparent"}`}>
+                                <div className="flex-shrink-0 relative w-fit items-center justify-center">
+                                    <img 
+                                        src={clanData.logo} 
+                                        alt="Clan Logo"
+                                        className="!rounded-full !object-cover !w-18 !h-17"  />
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0 !ml-3">
+                                    <div className="relative flex justify-center w-full">
+                                        <p className="font-bold text-center w-full"> Group Chat </p>
+                                        <p className="absolute top-0 right-0 text-sm text-gray-400">{getUpdatedTimeSince(room.latestMessage?.createdAt)}</p>
+                                    </div>
+                                        <p className="text-center truncate w-full">
+                                            {(room.latestMessage?.imageURL && room.latestMessage?.text)
+                                                ? `🏞️ Image | ${room.latestMessage?.text}`
+                                                : room.latestMessage?.imageURL
+                                                ? "🏞️ Image"
+                                                : room.latestMessage?.text ?? ""}
+                                        </p>
+                                </div>
                         </div>
                     ))}
+                    <hr className="!h-2 !w-1/2 !mx-auto !bg-orange-400 !border-0 !rounded !mt-3 !mb-3"/>
                 {
                     chatList.map((room) => {
                             const user = memberInfo[room.otherUserID];
 
                             return (
-                                <div key={room.roomId} onClick={() => onSelectDirectRoom(room.otherUserID)} className="flex flex-row cursor-pointer">
-                                    <img src={user?.profilePicture} alt={`${user?.name} profilePicture`} />
-                                    <div>
-                                        <p className="font-bold">{user?.name}</p>
-                                        <p>{room.latestMessage?.text ? room.latestMessage.text : ""}</p>
-                                        <p>{getUpdatedTimeSince(room.latestMessage?.createdAt)}</p>
+                                <div 
+                                    key={room.roomId} 
+                                    onClick={() => onSelectDirectRoom(room.otherUserID)} 
+                                    className={`flex flex-row cursor-pointer items-center w-full !p-2
+                                        ${currentRoomID === room.roomId ? "bg-green-200" : "bg-transparent"}`}>
+                                    <div className="flex-shrink-0 relative w-fit items-center justify-center">
+                                        <img 
+                                            src={user?.profilePicture} 
+                                            alt={`${user?.name} profilePicture`} 
+                                            className="!rounded-full !object-cover !w-18 !h-17" />
+                                        <div className="absolute bottom-0 -right-2">
+                                            <PresenceDisplay userID={user?.id} shortened={true} />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col flex-1 min-w-0 !ml-3">
+                                        <div className="relative flex justify-center w-full">
+                                            <p className="font-bold text-center w-full">{user?.name}</p>
+                                            <p className="absolute top-0 right-0 text-sm text-gray-400">{getUpdatedTimeSince(room.latestMessage?.createdAt)}</p>
+                                        </div>
+                                        <p className="text-center truncate w-full">
+                                            {(room.latestMessage?.imageURL && room.latestMessage?.text)
+                                                ? `🏞️ Image | ${room.latestMessage?.text}`
+                                                : room.latestMessage?.imageURL
+                                                ? "🏞️ Image"
+                                                : room.latestMessage?.text ?? ""}
+                                        </p>
                                     </div>
                                 </div>
                             )

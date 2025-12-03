@@ -97,7 +97,7 @@ const chat = () => {
                     <>
                         <div className="flex flex-2">
                             <div className="w-[30%]">
-                                <ChatList clanData={clanData} onSelectDirectRoom={handleSelectDirectRoom} onSelectGroupChat={handleGroupChatClick} />
+                                <ChatList clanData={clanData} currentRoomID={roomID} onSelectDirectRoom={handleSelectDirectRoom} onSelectGroupChat={handleGroupChatClick} />
                             </div>
                             <div>
                                 {

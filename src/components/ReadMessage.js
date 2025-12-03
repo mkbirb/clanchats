@@ -270,11 +270,11 @@ const renderMessageWithCustomEmojis = (text) => {
             {Object.values(participantData).map((person) => (
                 <>
                   <p> {person.username}</p>
-                  <PresenceDisplay userID={person.id} />
+                  <PresenceDisplay userID={person.id} shortened={false} />
                 </>
             ))}
           </>) : (<>
-              <PresenceDisplay userID={targetUserID} />
+              <PresenceDisplay userID={targetUserID} shortened={false} />
               <DisplayRoomLevel />
           </>)}
           {
