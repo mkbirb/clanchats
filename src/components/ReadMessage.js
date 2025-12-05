@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo, useRef } from "react";
 import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID, retrieveRoomBasedOnID, getCachedUserByID, createRetrieveGroupRoom, retrieveClan} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
@@ -16,6 +16,7 @@ import useSeenMessages from "../customHooks/useSeenMessages.js";
 import SeenIcon from "./SeenIcon.js";
 import PresenceDisplay from "./PresenceDisplay.js";
 import YoutubeEmbed from "./YoutubeEmbed.js";
+import RoomHeader from "./RoomHeader.js";
 
 
 const ReadMessage = ({clanID, roomType = "direct"}) => {
@@ -49,6 +50,8 @@ const ReadMessage = ({clanID, roomType = "direct"}) => {
     const [lastStableSeenID, setLastStableSeenID] = useState(null);
 
     const [participantData, setParticipantData] = useState({});
+
+    const messagesContainerRef = useRef(null);
 
     useEffect(() => {
         console.log("Room ID:", roomID);
@@ -172,6 +175,14 @@ const ReadMessage = ({clanID, roomType = "direct"}) => {
         }
     }, [lastSeenMessageID, messages]);
 
+    // Autoscroll to the bottom when Messages are being read or when new message sent
+    useEffect(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+      }
+    }, [messages])
+
     const handleDelete = (messageId) => {
       deleteMessage(messageId, clanID, roomID, roomType);
     }
@@ -264,109 +275,101 @@ const renderMessageWithCustomEmojis = (text) => {
 
     return (
         <>
-          <p>Messages {userID}</p>
-          <p>Room ID {roomID}</p>
-          {roomType === "group" ? (<>
-            {Object.values(participantData).map((person) => (
-                <>
-                  <p> {person.username}</p>
-                  <PresenceDisplay userID={person.id} shortened={false} />
-                </>
-            ))}
-          </>) : (<>
-              <PresenceDisplay userID={targetUserID} shortened={false} />
-              <DisplayRoomLevel />
-          </>)}
+          <RoomHeader participantData={participantData} targetUserID={targetUserID} roomType={roomType} />
           {
             messages.length === 0 ? (
               <>
                 <p> Looks like this is a new Chat, send the first message!</p>
               </>
             ): (
-                messages.map((message) => (
-                <li key={message.id}>  
-                  <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
-                  <p> {messageUsername[message.userID]} </p>
-                  <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
-                  <button onClick={() => setReplyTo(message.id)}> Reply </button>
-                  <button onClick={() => handleDelete(message.id)}> Delete </button>
-                  <button onClick={() =>  {
-                    setEditingMessageId(message.id); 
-                    setEditText(message.text)}}> Edit </button>
-                  <RepliedMessage clanID={clanID} roomType={roomType} replyTo={message.replyTo} />
+                <div className="!h-screen flex flex-col">
+                  <div className="flex-1 !overflow-y-auto px-3" ref={messagesContainerRef}>
+                    {messages.map((message) => (
+                    <div key={message.id}>  
+                      <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
+                      <p> {messageUsername[message.userID]} </p>
+                      <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
+                      <button onClick={() => setReplyTo(message.id)}> Reply </button>
+                      <button onClick={() => handleDelete(message.id)}> Delete </button>
+                      <button onClick={() =>  {
+                        setEditingMessageId(message.id); 
+                        setEditText(message.text)}}> Edit </button>
+                      <RepliedMessage clanID={clanID} roomType={roomType} replyTo={message.replyTo} />
 
-                  {editingMessageId === message.id ? (
-                    <>
-                        <textarea value={editText} onChange={(e) => setEditText(e.target.value) }/>
-                        <button onClick={() => {
-                            handleEdit(message.id);
-                            setEditingMessageId(null);
-                            setEditText(null);
-                          }}> Update </button>
-                        <button onClick={() => {
-                          setEditingMessageId(null); 
-                          setEditText(null);}}> Cancel </button>
-                    </>
-                  ) : (
-                    <div id={`message-${message.id}`} data-id={`${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
-                      {renderMessageWithCustomEmojis(message.text)} 
-                      <YoutubeEmbed textMessage={message.text} />
-                      {/* {console.log("Rendering message ID:", message.id)}
-                      {console.log("Last seen message ID:", lastSeenMessageID)} */}
-                      {roomType === "direct" && (
-                        <SeenIcon 
-                          message={message} 
-                          currentUserID={userID} 
-                          lastSeenMessageID={lastStableSeenID} 
-                          showSeenIcon={message.id === lastStableSeenID}
-                          userMap={participantData}/>
+                      {editingMessageId === message.id ? (
+                        <>
+                            <textarea value={editText} onChange={(e) => setEditText(e.target.value) }/>
+                            <button onClick={() => {
+                                handleEdit(message.id);
+                                setEditingMessageId(null);
+                                setEditText(null);
+                              }}> Update </button>
+                            <button onClick={() => {
+                              setEditingMessageId(null); 
+                              setEditText(null);}}> Cancel </button>
+                        </>
+                      ) : (
+                        <div id={`message-${message.id}`} data-id={`${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
+                          {renderMessageWithCustomEmojis(message.text)} 
+                          <YoutubeEmbed textMessage={message.text} />
+                          {/* {console.log("Rendering message ID:", message.id)}
+                          {console.log("Last seen message ID:", lastSeenMessageID)} */}
+                          {roomType === "direct" && (
+                            <SeenIcon 
+                              message={message} 
+                              currentUserID={userID} 
+                              lastSeenMessageID={lastStableSeenID} 
+                              showSeenIcon={message.id === lastStableSeenID}
+                              userMap={participantData}/>
+                          )}
+
+                          {roomType === "group" && (
+                            <SeenIcon
+                              message={message}
+                              currentUserID={userID}
+                              groupLastSeen={userLastSeenMap}   
+                              userMap={participantData}
+                            />
+                          )}
+                        </div>
+                        )}
+
+                      {message.imageURL && (
+                        <ViewImage src={message.imageURL} />
                       )}
 
-                      {roomType === "group" && (
-                        <SeenIcon
-                          message={message}
-                          currentUserID={userID}
-                          groupLastSeen={userLastSeenMap}   
-                          userMap={participantData}
-                        />
-                      )}
-                    </div>
-                    )}
-
-                  {message.imageURL && (
-                    <ViewImage src={message.imageURL} />
-                  )}
-
-                  <button onClick={
-                    // Open the Reaction Picker if null, where if Reaction Picker already set to Message ID and is therefore showing
-                    // When React button is clicked again, we set it to Null to hide the Reaction Picker
-                    () => setShowReactionPicker(showReactionPicker === message.id ? null: message.id)
-                  }>
-                    👍
-                  </button>
-                  {
-                    showReactionPicker === message.id && (
-                      // Update the State and then close the Reaction Picker
-                      <ReactionPicker onSelect={(emoji) => {
-                        handleReaction(message.id, emoji);
-                        setShowReactionPicker(null);
-                        }}
+                      <button onClick={
+                        // Open the Reaction Picker if null, where if Reaction Picker already set to Message ID and is therefore showing
+                        // When React button is clicked again, we set it to Null to hide the Reaction Picker
+                        () => setShowReactionPicker(showReactionPicker === message.id ? null: message.id)
+                      }>
+                        👍
+                      </button>
+                      {
+                        showReactionPicker === message.id && (
+                          // Update the State and then close the Reaction Picker
+                          <ReactionPicker onSelect={(emoji) => {
+                            handleReaction(message.id, emoji);
+                            setShowReactionPicker(null);
+                            }}
+                          />
+                        )
+                      }
+                      <ReactionsDisplay
+                        key={message.id}
+                        messageId={message.id}
+                        reactions={reactions[message.id] || {}}
+                        reactionsOrder={message.reactionsOrder || []}
+                        clanID={clanID}
+                        roomID={roomID}
+                        roomType={roomType}
+                        userID={userID}
+                        refreshTrigger={refreshReactions}
                       />
-                    )
-                  }
-                  <ReactionsDisplay
-                    key={message.id}
-                    messageId={message.id}
-                    reactions={reactions[message.id] || {}}
-                    reactionsOrder={message.reactionsOrder || []}
-                    clanID={clanID}
-                    roomID={roomID}
-                    roomType={roomType}
-                    userID={userID}
-                    refreshTrigger={refreshReactions}
-                  />
-                </li>
-              ))
+                    </div>
+                  ))}
+                  </div>
+                </div>
             )
           }
         </>

@@ -30,12 +30,16 @@ const EmojiPicker = ({ onEmojiSelect }) => {
     }, [clan])
     return (
         <>
-            <button type="button" onClick={() => setShowEmojiPicker(prev => !prev)}>
+            <button 
+                type="button" 
+                onClick={() => setShowEmojiPicker(prev => !prev)}
+                className='cursor-pointer !bg-gray-200 !p-2 !rounded-full'>
                 🤪
             </button>
 
             {showEmojiPicker && (
-                <Picker 
+                <div className="absolute bottom-full mb-2 left-0 z-50">
+                    <Picker 
                     data={data} 
                     onEmojiSelect={onEmojiSelect} 
                     custom={customEmojis.length > 0 ? [{
@@ -44,6 +48,7 @@ const EmojiPicker = ({ onEmojiSelect }) => {
                         emojis: customEmojis
                     }] : []}
                     theme="light" />
+                </div>
             )}
         </>
     );

@@ -81,8 +81,7 @@ const PresenceDisplay = ({userID, shortened = false}) => {
                 </span>
             )}
             {(shortened == false) && (
-                <span> 
-                    Status of user: 
+                <span className="font-bold"> 
                     {displayStatus === "online" && (
                         <p> 🟢 Online </p>
                     )}

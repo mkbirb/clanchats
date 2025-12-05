@@ -2,7 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/dashboard": "pages/dashboard.js",
-  "/chat/[clan]/calender": "pages/chat/[clan]/calender.js",
-  "/chat/[clan]": "pages/chat/[clan].js"
+  "/chat/[clan]": "pages/chat/[clan].js",
+  "/chat/[clan]/timetables": "pages/chat/[clan]/timetables.js",
+  "/chat/[clan]/memoryBoard": "pages/chat/[clan]/memoryBoard.js"
 }

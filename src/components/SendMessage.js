@@ -7,6 +7,9 @@ import useFetchOriginalMessage from "../customHooks/useFetchOriginalMessage";
 import EmojiPicker from './EmojiPicker.js';
 import { jumpToMessage } from "../utils/jumpToMessage.js";
 import { useTypingUsers } from "../customHooks/useTypingUsers.js";
+import uploadImageIcon from '../images/uploadImageIcon.png';
+import messageSendIcon from '../images/messageSendIcon.png';
+import Image from "next/image.js";
 
 const SendMessage = ({clanID, roomType = "direct", onReplySent}) => {
     const [message, setMessage] = useState("");
@@ -99,40 +102,104 @@ const SendMessage = ({clanID, roomType = "direct", onReplySent}) => {
     }
 
     // Retrieve the Users that are typing
-    const typingUsers = useTypingUsers(roomID, userID)
+    const typingUsers = useTypingUsers(roomID, userID);
+
+    const removeImage = () => {
+        setImage(null);
+    }
 
     return (
         <>
-            <form onSubmit={handleSend}>
-                {originalMessage && (
-                    <div>
-                        <p> Replying To</p>
-                        <p> {originalMessage.text} </p>
+            <div className="flex flex-col !w-[50%] fixed bottom-0 bg-white">
+
+                {/* Preview the Images Uploaded */}
+                {image && (
+                    <div className="relative w-48 h-38">
+                        <img
+                            src={URL.createObjectURL(image)}
+                            alt="Preview"
+                            className="w-full object-cover rounded-lg shadow-md !h-35"
+                        />
+                        <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute top-1 !text-3xl !font-bold right-1 cursor-pointer bg-gray-800 text-white rounded-full w-6 h-6 flex items-center justify-center !hover:bg-red-600"
+                        >
+                            ×
+                        </button>
                     </div>
                 )}
-                <EmojiPicker onEmojiSelect={addEmoji} />
-                <textarea 
-                    placeholder="Send a Message" 
-                    value={message}
-                    onChange={(e) => handleMessageInputChange(e)}
-                    onKeyDown={(e) => {
-                        // Also ensures that Shift + Enter still creates a New Line
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSend(e);
-                        }
-                    }}/>
-                <input 
-                    type="file"
-                    onChange={(e) => setImage(e.target.files[0])}
-                    accept="image/*"
-                />
-                <input
-                    type="submit"
-                    className="!bg-blue-500 !text-white !font-semibold !py-2 px-4 !rounded-lg shadow-md hover:!bg-blue-600 !focus:outline-none focus:ring-2 !focus:ring-blue-500 !focus:ring-opacity-50 active:!bg-blue-700"
-                >
-                </input>
-            </form>
+                <form 
+                    onSubmit={handleSend}
+                    className="flex flex-row !gap-x-2">
+                    {originalMessage && (
+                        <div>
+                            <p> Replying To</p>
+                            <p> {originalMessage.text} </p>
+                        </div>
+                    )}
+                    <EmojiPicker onEmojiSelect={addEmoji} />
+                    <textarea 
+                        placeholder="Send a Message" 
+                        value={message}
+                        onChange={(e) => handleMessageInputChange(e)}
+                        onKeyDown={(e) => {
+                            // Also ensures that Shift + Enter still creates a New Line
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend(e);
+                            }
+                        }}
+                        className="flex-grow !h-12 resize-none !rounded-lg !border-2 !text-lg !border-gray-300  focus:outline-none transition-all duration-200 shadow-md"/>
+                    <input 
+                        type="file"
+                        id="imageUpload"
+                        onChange={(e) => setImage(e.target.files[0])}
+                        accept="image/*"
+                        className="hidden"
+                    />
+                    <label 
+                        htmlFor="imageUpload"
+                        className="
+                            !w-10
+                            cursor-pointer 
+                            bg-gray-200 
+                            !rounded-full 
+                            !flex items-center 
+                            justify-center 
+                            transition-colors 
+                            duration-200">
+                            <Image
+                                src={uploadImageIcon}
+                                alt="Upload Image"
+                                className="w-8 h-8"
+                            />
+                    </label>
+                    <input
+                        type="submit"
+                        className="hidden !text-white !font-semibold !py-2 px-4 !rounded-lg shadow-md hover:!bg-blue-600 !focus:outline-none focus:ring-2 !focus:ring-blue-500 !focus:ring-opacity-50 active:!bg-blue-700"
+                        id="sendMessage"
+                    >
+                    </input>
+                    <label 
+                        htmlFor="sendMessage"
+                        className="
+                            !w-10
+                            cursor-pointer 
+                          bg-black
+                            !rounded-full 
+                            !flex items-center 
+                            justify-center 
+                            transition-colors 
+                            duration-200
+                            ">
+                        <Image 
+                            src={messageSendIcon} 
+                            alt="Send Message"
+                            className="w-8 h-8"/>
+                    </label>
+                </form>
+            </div>
             {typingUsers.length > 0 && ( 
                 <div>
                     {typingUsers.map(user => user.displayName).join(", ")} typing...
