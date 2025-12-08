@@ -76,9 +76,10 @@ const SendMessage = ({clanID, roomType = "direct", onReplySent}) => {
         
         // Reset the Message
         setMessage("");
-        setImage(null);
         setReplyTo(null);
         setOriginalMessage(null);
+
+        removeImage();
     }
 
     const handleMessageInputChange = (e) => {
@@ -106,6 +107,12 @@ const SendMessage = ({clanID, roomType = "direct", onReplySent}) => {
 
     const removeImage = () => {
         setImage(null);
+
+        // Also reset the file input
+        const fileInput = document.getElementById("imageUpload");
+        if (fileInput) {
+            fileInput.value = "";
+        }
     }
 
     return (
@@ -129,15 +136,30 @@ const SendMessage = ({clanID, roomType = "direct", onReplySent}) => {
                         </button>
                     </div>
                 )}
+                {originalMessage && (
+                    <div className="relative !bg-amber-300 !p-1 !rounded-2xl">
+                        <p className="font-semibold">
+                            Replying To
+                        </p>
+                        {originalMessage.text && originalMessage.imageURL ? (
+                            <p className="italic"> 🏞️ Image | {originalMessage.text} </p>
+                            ) : originalMessage.text ? (
+                            <p>{originalMessage.text}</p> 
+                            ) : originalMessage.imageURL ? (
+                            <p className="italic">🏞️ Image</p> 
+                            ) : null}
+                        <button
+                            type="button"
+                            onClick={() => {setOriginalMessage(null), setReplyTo(null)}}
+                            className="text-black absolute top-1 right-1 !font-bold cursor-pointer !text-2xl px-2 py-1"
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
                 <form 
                     onSubmit={handleSend}
                     className="flex flex-row !gap-x-2">
-                    {originalMessage && (
-                        <div>
-                            <p> Replying To</p>
-                            <p> {originalMessage.text} </p>
-                        </div>
-                    )}
                     <EmojiPicker onEmojiSelect={addEmoji} />
                     <textarea 
                         placeholder="Send a Message" 

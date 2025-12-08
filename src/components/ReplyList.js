@@ -4,6 +4,8 @@ import { addRemovedReplyListMessageID, getUnRepliedMessages } from "./firebaseCo
 import { useCurrentUser } from "../context/CurrentUserContext";
 import { jumpToMessage } from "../utils/jumpToMessage";
 import useFetchMessageOwner from "../customHooks/useFetchMessageOwner";
+import caughtUpWithRepliesIcon from '../images/caughtUpWithReplies.png';
+import Image from "next/image";
 
 const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
 
@@ -43,24 +45,40 @@ const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
 
     return (
         <>
-            <p>Your Reply List (Only for 3 Words and Up):</p>
-            {replyList.length === 0 ? (
-            <p> You are all caught up with Replies!</p>
-            ) : (
-            <ul>
-                {replyList.map((message, index) => {
-                return (
-                    <li key={index}> 
-                        <div onClick={() => jumpToMessage(message.id)}>
-                            <p>{messageUsername[message.userID] || "Loading..."}</p>
-                            <p>{message.text}</p>
-                        </div>
-                        <button onClick={() => removeFromReplyList(message.id)}> Remove </button>
-                    </li>
-                );
-                })}
-            </ul>
-            )}
+            <div className="flex flex-col">
+                <p className="relative group w-fit cursor-pointer text-center font-bold text-3xl self-center"> 📩Reply List
+                    <span className="absolute left-1/2 -translate-x-1/2 mt-1 hidden group-hover:block 
+                    rounded bg-gray-800 px-2 py-1 !text-sm text-white shadow-lg z-50 w-80 text-center">
+                        Tracks the Messages in the Room that you have not responded to yet. 
+                        <br></br>
+                        <b>Messages would be added to this list if they are 3 Words or more!</b>
+                    </span>
+                </p>
+                {replyList.length === 0 ? (
+                    <>
+                        <Image 
+                            src={caughtUpWithRepliesIcon} 
+                            alt="CaughtUpWithRepliesIcon"
+                            className="h-1/2 w-1/2 self-center"
+                            />
+                        <p className="text-center italic"> You are all caught up with Replies!</p>
+                    </>
+                ) : (
+                <ul>
+                    {replyList.map((message, index) => {
+                    return (
+                        <li key={index}> 
+                            <div onClick={() => jumpToMessage(message.id)}>
+                                <p>{messageUsername[message.userID] || "Loading..."}</p>
+                                <p>{message.text}</p>
+                            </div>
+                            <button onClick={() => removeFromReplyList(message.id)}> Remove </button>
+                        </li>
+                    );
+                    })}
+                </ul>
+                )}
+            </div>
         </> 
     )
 }

@@ -35,7 +35,7 @@ const RoomHeader = ({participantData, targetUserID, roomType}) => {
                         <div className="flex flex-col items-center min-w-0 flex-1">
                             <p className="font-bold text-xl"> {targetUser?.username}</p>
                             <PresenceDisplay userID={targetUserID} shortened={false} />
-                            <div className="relative group w-full">
+                            <div className="relative group w-full text-center">
                                 <p className="!truncate w-full italic cursor-pointer"> {targetUser?.wordStatus}</p>
                                 <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1
                                                 hidden group-hover:block

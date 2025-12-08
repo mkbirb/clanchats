@@ -10,6 +10,7 @@ import SearchMessages from "../../../components/SearchMessages";
 import ReplyList from "../../../components/ReplyList";
 import ClanHome from "../../../components/ClanHome";
 import { UserPresenceTracking } from "../../../utils/userPresenceTracking";
+import MusicStatusDisplay from "../../../components/MusicStatusDisplay";
 
 const chat = () => {
 
@@ -28,6 +29,9 @@ const chat = () => {
 
     // Keeps track on what type of Room, whether it is Direct or Group Chat
     const [roomType, setRoomType] = useState("");
+
+    // Members of the room
+    const [participants, setParticipants] = useState([]);
 
     // Gets the Clan ID from the URL Parameter
     useEffect(() => {
@@ -89,25 +93,39 @@ const chat = () => {
         setRoomType(groupRoom.roomType);
     };
 
+    const targetUserID = participants
+    // If the Person is an Object than get the ID Property, otherwise if it is already an ID, just use it
+    .map(p => (typeof p === 'object' && 'id' in p ? p.id : p))
+    // Exclude the Current User
+    .find(uid => uid !== user.id) || null;
+
     return (
         <> 
             {
                 // Display once already fetched the Clan Data
                 clanData ? (
                     <>
-                        <div className="flex flex-2">
-                            <div className="w-[30%]">
+                        <div className="flex flex-2 w-full">
+                            <div className="w-[25%]">
                                 <ChatList clanData={clanData} currentRoomID={roomID} onSelectDirectRoom={handleSelectDirectRoom} onSelectGroupChat={handleGroupChatClick} />
                             </div>
-                            <div>
+                            <div className="w-full">
                                 {
                                     // Display the Message Chat, when a User has been selected
                                     roomID ? (
                                         <>
-                                            <ReadMessage clanID={clanData.id} roomType={roomType} />
-                                            <SendMessage clanID={clanData.id} roomType={roomType} onReplySent={refreshReplyList}/>
-                                            <ReplyList clanID={clanData.id} roomType={roomType} refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
-                                            <SearchMessages clanID={clanData.id} roomType={roomType} />
+                                            <div className="flex flex-row w-full">
+                                                <div className="w-[70%]">
+                                                    <ReadMessage clanID={clanData.id} roomType={roomType} participants={participants} setParticipants={setParticipants} targetUserID={targetUserID}/>
+                                                    <SendMessage clanID={clanData.id} roomType={roomType} onReplySent={refreshReplyList}/>
+                                                </div>
+                                                <div className="w-[30%] bg-gray-950 text-white">
+                                                    <SearchMessages clanID={clanData.id} roomType={roomType} />
+                                                    <p className="font-bold text-center text-3xl !mb-2">🎶 Music Status </p>
+                                                    <MusicStatusDisplay userID={targetUserID} />
+                                                    <ReplyList clanID={clanData.id} roomType={roomType} refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
+                                                </div>
+                                            </div>
                                         </>
 
                                     ) : (

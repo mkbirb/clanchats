@@ -19,7 +19,7 @@ import YoutubeEmbed from "./YoutubeEmbed.js";
 import RoomHeader from "./RoomHeader.js";
 
 
-const ReadMessage = ({clanID, roomType = "direct"}) => {
+const ReadMessage = ({clanID, roomType = "direct", participants, setParticipants, targetUserID}) => {
     const [messages, setMessages] = useState([]);
     const [editText, setEditText] = useState('');
     const [editingMessageId, setEditingMessageId] = useState(null);
@@ -41,9 +41,6 @@ const ReadMessage = ({clanID, roomType = "direct"}) => {
     // Retrieve the Clan from the Query
     const { clan } = useRouter().query;
     const { customEmojis } = useCustomEmojis(clan);
-
-    // Members of the room
-    const [participants, setParticipants] = useState([]);
 
     // To prevent Race Conditions, where the SeenIcon temp disappears for one of the participants, 
     // when a new unseen (From recipient perspective) message is sent
@@ -80,13 +77,6 @@ const ReadMessage = ({clanID, roomType = "direct"}) => {
     }, [roomID]);
 
     const messageUsername = useFetchMessageOwner(messages);
-
-    const targetUserID = participants
-    // If the Person is an Object than get the ID Property, otherwise if it is already an ID, just use it
-    .map(p => (typeof p === 'object' && 'id' in p ? p.id : p))
-    // Exclude the Current User
-    .find(uid => uid !== userID) || null;
-
 
     const lastSeenMessage = [...messages]
       .reverse()

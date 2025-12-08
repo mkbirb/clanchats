@@ -43,7 +43,13 @@ const SearchMessages = ({clanID, roomType}) => {
 
     return (
         <>
-            <button onClick={() => setSearchModalViewed(true)}> Search </button>
+            <div className="flex justify-center">
+                <button 
+                onClick={() => setSearchModalViewed(true)}
+                className="!mb-3 !mt-3 !text-2xl !p-3 !text-white !font-bold !bg-amber-500 !rounded-2xl !cursor-pointer text-center self-center justify-center"> 
+                    🔎︎ Search Messages 
+                </button>
+            </div>
             <Modal
                 isOpen={searchModalViewed}
                 onRequestClose={() => setSearchModalViewed(false)}>
