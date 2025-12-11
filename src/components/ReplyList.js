@@ -7,7 +7,7 @@ import useFetchMessageOwner from "../customHooks/useFetchMessageOwner";
 import caughtUpWithRepliesIcon from '../images/caughtUpWithReplies.png';
 import Image from "next/image";
 
-const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
+const ReplyList = ({clanID, roomType = "direct", refreshTrigger, refreshReplyList, participantData}) => {
 
     const { userID, roomID } = useCurrentUser(); 
     const [replyList, setReplyList] = useState([]);
@@ -16,6 +16,8 @@ const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
     const messageUsername = useFetchMessageOwner(replyList);
 
     useEffect (() => {
+        if (!clanID || !roomID || !roomType || !userID) return;
+
         const unrepliedMessages = async () => {
 
             try {
@@ -29,7 +31,7 @@ const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
         }
 
         unrepliedMessages();
-    },  [roomID, userID, refreshTrigger])
+    },  [roomID, userID, roomType, refreshTrigger])
 
     const removeFromReplyList = async (messageID) => {
         try {
@@ -42,11 +44,13 @@ const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
             console.log("Removed Message from Reply List unsuccessful ", error);
         }
     }
+    
+    if (!roomType) return <p>Loading reply list...</p>;
 
     return (
         <>
-            <div className="flex flex-col">
-                <p className="relative group w-fit cursor-pointer text-center font-bold text-3xl self-center"> 📩Reply List
+            <div className="flex flex-col !w-full">
+                <p className="relative group cursor-pointer text-center font-bold text-3xl self-center"> 📩Reply List
                     <span className="absolute left-1/2 -translate-x-1/2 mt-1 hidden group-hover:block 
                     rounded bg-gray-800 px-2 py-1 !text-sm text-white shadow-lg z-50 w-80 text-center">
                         Tracks the Messages in the Room that you have not responded to yet. 
@@ -66,15 +70,32 @@ const ReplyList = ({clanID, roomType, refreshTrigger, refreshReplyList}) => {
                 ) : (
                 <ul>
                     {replyList.map((message, index) => {
-                    return (
-                        <li key={index}> 
-                            <div onClick={() => jumpToMessage(message.id)}>
-                                <p>{messageUsername[message.userID] || "Loading..."}</p>
-                                <p>{message.text}</p>
-                            </div>
-                            <button onClick={() => removeFromReplyList(message.id)}> Remove </button>
-                        </li>
-                    );
+                        const user = participantData[message.userID];
+                        return (
+                            <li key={index} className="!mb-2">
+                                <div className="flex flex-col !w-full cursor-pointer" onClick={() => jumpToMessage(message.id)}>
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className="flex items-center !space-x-2 ">
+                                            {user?.profilePicture && (
+                                            <img
+                                                src={user.profilePicture}
+                                                alt={`${user?.username || "User"} profile`}
+                                                className="!w-8 !h-8 !rounded-full !object-cover"
+                                            />
+                                            )}
+                                            <p className="font-bold">{messageUsername[message.userID] || "Loading..."}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => removeFromReplyList(message.id)}
+                                            className="!text-red-500 !hover:text-red-700 cursor-pointer"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                    <p className="mt-1 truncate !w-full !overflow-hidden">{message.text}</p>
+                                </div>
+                            </li>
+                        );
                     })}
                 </ul>
                 )}

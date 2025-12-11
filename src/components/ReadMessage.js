@@ -19,7 +19,7 @@ import YoutubeEmbed from "./YoutubeEmbed.js";
 import RoomHeader from "./RoomHeader.js";
 
 
-const ReadMessage = ({clanID, roomType = "direct", participants, setParticipants, targetUserID}) => {
+const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipants, targetUserID}) => {
     const [messages, setMessages] = useState([]);
     const [editText, setEditText] = useState('');
     const [editingMessageId, setEditingMessageId] = useState(null);
@@ -45,8 +45,6 @@ const ReadMessage = ({clanID, roomType = "direct", participants, setParticipants
     // To prevent Race Conditions, where the SeenIcon temp disappears for one of the participants, 
     // when a new unseen (From recipient perspective) message is sent
     const [lastStableSeenID, setLastStableSeenID] = useState(null);
-
-    const [participantData, setParticipantData] = useState({});
 
     const messagesContainerRef = useRef(null);
 
@@ -127,26 +125,6 @@ const ReadMessage = ({clanID, roomType = "direct", participants, setParticipants
         fetchClanMembers();
       }
     }, [roomID]);
-
-    useEffect(() => {
-      const fetchParticipantInfo = async () => {
-        const result = {};
-
-        for (const participant of participants) {
-          const uid = typeof participant === 'string' ? participant : participant.id;
-          const user = await getCachedUserByID(uid);
-          if (user) {
-            result[uid] = user;
-          }
-        }
-
-        setParticipantData(result); 
-      };
-
-      if (participants.length > 0) {
-        fetchParticipantInfo();
-      }
-    }, [participants]);
 
 
     useEffect(() => {

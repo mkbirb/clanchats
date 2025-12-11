@@ -4,7 +4,7 @@ import ReadMessage from "../../../components/ReadMessage";
 import ChatList from "../../../components/ChatList";
 import { useCurrentUser } from "../../../context/CurrentUserContext"; 
 import { useRouter } from 'next/router';
-import { checkRoom, createRetrieveGroupRoom, createRoom, retrieveClan, retrieveRoom } from "../../../components/firebaseConfig";
+import { checkRoom, createRetrieveGroupRoom, createRoom, getCachedUserByID, retrieveClan, retrieveRoom } from "../../../components/firebaseConfig";
 import { navigateTo } from "../../../components/Routes";
 import SearchMessages from "../../../components/SearchMessages";
 import ReplyList from "../../../components/ReplyList";
@@ -32,6 +32,8 @@ const chat = () => {
 
     // Members of the room
     const [participants, setParticipants] = useState([]);
+
+    const [participantData, setParticipantData] = useState({});
 
     // Gets the Clan ID from the URL Parameter
     useEffect(() => {
@@ -61,6 +63,26 @@ const chat = () => {
         fetchClan();
 
     }, [clanID])
+
+    useEffect(() => {
+        const fetchParticipantInfo = async () => {
+        const result = {};
+
+        for (const participant of participants) {
+            const uid = typeof participant === 'string' ? participant : participant.id;
+            const user = await getCachedUserByID(uid);
+            if (user) {
+            result[uid] = user;
+            }
+        }
+
+        setParticipantData(result); 
+        };
+
+        if (participants.length > 0) {
+        fetchParticipantInfo();
+        }
+    }, [participants]);
 
     // Used for when the User selects the Direct User Room or the Group Chat Buttons
     const handleSelectDirectRoom = async (otherUserID) => {
@@ -109,33 +131,35 @@ const chat = () => {
                             <div className="w-[25%]">
                                 <ChatList clanData={clanData} currentRoomID={roomID} onSelectDirectRoom={handleSelectDirectRoom} onSelectGroupChat={handleGroupChatClick} />
                             </div>
-                            <div className="w-full">
+                           
                                 {
                                     // Display the Message Chat, when a User has been selected
                                     roomID ? (
                                         <>
-                                            <div className="flex flex-row w-full">
+                                            <div className="flex flex-row w-[75%]">
                                                 <div className="w-[70%]">
-                                                    <ReadMessage clanID={clanData.id} roomType={roomType} participants={participants} setParticipants={setParticipants} targetUserID={targetUserID}/>
+                                                    <ReadMessage clanID={clanData.id} roomType={roomType} participantData={participantData} setParticipants={setParticipants} targetUserID={targetUserID}/>
                                                     <SendMessage clanID={clanData.id} roomType={roomType} onReplySent={refreshReplyList}/>
                                                 </div>
-                                                <div className="w-[30%] bg-gray-950 text-white">
+                                                <div className="flex flex-col w-[30%] bg-gray-950 text-white">
                                                     <SearchMessages clanID={clanData.id} roomType={roomType} />
                                                     <p className="font-bold text-center text-3xl !mb-2">🎶 Music Status </p>
                                                     <MusicStatusDisplay userID={targetUserID} />
-                                                    <ReplyList clanID={clanData.id} roomType={roomType} refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList}/>
+                                                    <ReplyList clanID={clanData.id} roomType={roomType} refreshTrigger={refreshTrigger} refreshReplyList={refreshReplyList} participantData={participantData}/>
                                                 </div>
                                             </div>
                                         </>
 
                                     ) : (
                                         <>
-                                            <ClanHome clanData={clanData}/>
+                                            <div className="w-full">
+                                                <ClanHome clanData={clanData}/>
+                                            </div>
                                         </>
                                     )
                                 }
                             </div>
-                        </div>
+                        
                     </>
                 ): (
                 <p> Loading... </p>
