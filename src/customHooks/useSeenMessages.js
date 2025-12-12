@@ -3,7 +3,7 @@ import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { messageSeenTracking } from '../utils/messageTracking';
 import debounce from 'lodash/debounce';
 
-const useSeenMessages = (messages, currentUserID, clanId, roomID, roomType) => {
+const useSeenMessages = (messages, currentUserID, clanId, roomID, roomType, markedSeenRef) => {
     const observer = useRef(null);
     // Reuse the same function that has been created through UseCallback to optimise Performance
     // Debounce helps for optimisation as well
@@ -19,6 +19,13 @@ const useSeenMessages = (messages, currentUserID, clanId, roomID, roomType) => {
     }, [messages]);
 
     useEffect(() => {
+        // Only sender runs this logic for early exit
+        const last = messages[messages.length - 1];
+
+        if (last && last.userID !== currentUserID) {
+            return;
+        }
+
         const seenMessageIDs = new Set();
 
         // Disconnect any previous observers to prevent Memory Leaks
@@ -57,6 +64,7 @@ const useSeenMessages = (messages, currentUserID, clanId, roomID, roomType) => {
         messages.forEach((msg) => {
             // Skip Messages that have already been seen to reduce quota
             if (msg.seenBy?.[currentUserID]) return;
+            if (markedSeenRef.current.has(msg.id)) return;
 
             const el = document.querySelector(`[id="message-${msg.id}"]`);
             if (el) observer.current.observe(el);

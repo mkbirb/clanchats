@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo, useRef } from "react";
+import React, { useState, useEffect, useContext, useMemo, useRef, useCallback } from "react";
 import {retrieveMessages, deleteMessage, editMessage, addReaction, listenToReactions, getUserByID, retrieveRoomBasedOnID, getCachedUserByID, createRetrieveGroupRoom, retrieveClan} from "./firebaseConfig.js";
 import { useCurrentUser } from "../context/CurrentUserContext"; 
 import { ReplyContext } from '../context/ReplyContext';
@@ -17,6 +17,7 @@ import SeenIcon from "./SeenIcon.js";
 import PresenceDisplay from "./PresenceDisplay.js";
 import YoutubeEmbed from "./YoutubeEmbed.js";
 import RoomHeader from "./RoomHeader.js";
+import { debounce } from "lodash";
 
 
 const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipants, targetUserID}) => {
@@ -45,6 +46,13 @@ const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipa
     // To prevent Race Conditions, where the SeenIcon temp disappears for one of the participants, 
     // when a new unseen (From recipient perspective) message is sent
     const [lastStableSeenID, setLastStableSeenID] = useState(null);
+
+    const [unreadMessages, setUnreadMessages] = useState([]);
+
+    const [isAtBottom, setIsAtBottom] = useState(true);
+
+    // Keeps track on how long the Unread Banner would be displayed when seen by the user
+    const [bannerVisibleUntil, setBannerVisibleUntil] = useState(0);
 
     const messagesContainerRef = useRef(null);
 
@@ -76,15 +84,78 @@ const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipa
 
     const messageUsername = useFetchMessageOwner(messages);
 
+    const hasSeen = (msg, userID) => {
+      if (!msg.seenBy) return false;
+
+      if (Array.isArray(msg.seenBy)) {
+        return msg.seenBy.includes(userID);
+      }
+
+      // Convert object to array
+      if (typeof msg.seenBy === "object") {
+        return Boolean(msg.seenBy[userID]);
+      }
+
+      return false;
+    };
+
     const lastSeenMessage = [...messages]
       .reverse()
-      .find(msg => {
-        // Convert the Object to Array
-        const seenArray = msg.seenBy ? Object.keys(msg.seenBy) : [];
-        return seenArray.includes(targetUserID);
-      });
-
+      .find(msg => hasSeen(msg, targetUserID));
+    
     const lastSeenMessageID = lastSeenMessage?.id;
+
+    const markedSeenRef = useRef(new Set());
+
+    useEffect(() => {
+      if (!messagesContainerRef.current) return;
+
+      const container = messagesContainerRef.current;
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      // Number of Pixels to be considered to be at bottom
+      const threshold = 200;
+      const atBottom = distanceFromBottom <= threshold;
+
+      // Compute unread messages
+      const newUnread = messages.filter(
+        m => m.userID !== userID && !hasSeen(m, userID)
+      );
+
+      if (atBottom) {
+        // If user is at bottom, mark messages as seen immediately
+        messageSeenTracking(newUnread, userID, clanID, roomID, roomType);
+        setUnreadMessages([]);
+      } 
+      else {
+        // User is not at bottom than show the banner
+        setUnreadMessages(newUnread);
+      }
+    }, [messages, userID, clanID, roomID, roomType]);
+
+    const handleScroll = () => {
+      if (!messagesContainerRef.current) return;
+
+      const container = messagesContainerRef.current;
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      const threshold = 50;
+      const atBottom = distanceFromBottom <= threshold;
+      setIsAtBottom(atBottom);
+
+      // Mark all unseen messages as seen if user is at bottom and there are actually unread messages
+      if (atBottom && unreadMessages.length > 0) {
+        messageSeenTracking(unreadMessages, userID, clanID, roomID, roomType);
+        setUnreadMessages([]);
+      }
+    };
+
+    // Reattaches the listener for Unread Messages
+    useEffect(() => {
+      const container = messagesContainerRef.current;
+      if (!container) return;
+
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }, [unreadMessages]);
 
     // For the indicator that Message has been delivered to recipient
     useEffect(() => {
@@ -92,8 +163,21 @@ const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipa
       return () => unsubscribe()
     }, [roomID, userID]);
 
-    // // For the Indicator that a Message has been seen by recipient
-    useSeenMessages(messages, userID, clanID, roomID, roomType);
+    // For the Indicator that a Message has been seen by recipient
+    useSeenMessages(messages, userID, clanID, roomID, roomType, markedSeenRef);
+
+    useEffect(() => {
+      // If unread banner should appear now
+      if (!isAtBottom && unreadMessages.length > 0) {
+        const now = Date.now();
+
+        // Only extend if expired, not every update
+        if (now > bannerVisibleUntil) {
+          // Be visible for 15 seconds
+          setBannerVisibleUntil(now + 15000);
+        }
+      }
+    }, [unreadMessages, isAtBottom]);
 
     useEffect(() => {
       const fetchRoom = async () => {
@@ -143,13 +227,27 @@ const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipa
         }
     }, [lastSeenMessageID, messages]);
 
-    // Autoscroll to the bottom when Messages are being read or when new message sent
+    // Smart Autoscroll, where if recipient at bottom of chat, then autoscroll bottom, if recipient
+    // Not bottom of chat then nothing happens
     useEffect(() => {
-      if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop =
-        messagesContainerRef.current.scrollHeight;
+      if (!messages.length || !messagesContainerRef.current) return;
+
+      const container = messagesContainerRef.current;
+
+      // Checks how far user is from bottom
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+
+      // Determines the pixels in which user is at the bottom
+      const scrollThreshold = 200;
+
+      // Only autoscroll if the user is near the bottom OR if the current user sent the last message
+      const lastMessage = messages[messages.length - 1];
+      if (distanceFromBottom <= scrollThreshold || lastMessage.userID === userID) {
+        container.scrollTop = container.scrollHeight;
       }
-    }, [messages])
+    }, [messages, userID]);
+
+    const firstUnreadIndex = messages.findIndex(msg => unreadMessages.includes(msg));
 
     const handleDelete = (messageId) => {
       deleteMessage(messageId, clanID, roomID, roomType);
@@ -252,89 +350,100 @@ const renderMessageWithCustomEmojis = (text) => {
             ): (
                 <div className="!h-screen flex flex-col">
                   <div className="flex-1 !overflow-y-auto px-3" ref={messagesContainerRef}>
-                    {messages.map((message) => (
-                    <div key={message.id}>  
-                      <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
-                      <p> {messageUsername[message.userID]} </p>
-                      <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
-                      <button onClick={() => setReplyTo(message.id)}> Reply </button>
-                      <button onClick={() => handleDelete(message.id)}> Delete </button>
-                      <button onClick={() =>  {
-                        setEditingMessageId(message.id); 
-                        setEditText(message.text)}}> Edit </button>
-                      <RepliedMessage clanID={clanID} roomType={roomType} replyTo={message.replyTo} />
+                    {messages.map((message, index) => (
+                      <div key={message.id}>
+                        {/* Displays the Unread Messages Header */}
+                        {/* {console.log("Unread Messages Length ", unreadMessages.length)} */}
+                        {index === firstUnreadIndex &&
+                          unreadMessages.length > 0 && 
+                          ( !isAtBottom || Date.now() < bannerVisibleUntil ) && (
+                            <div className="my-4 text-center">
+                              <span className="inline-block bg-yellow-300 text-black text-sm px-3 py-1 rounded-full font-semibold">
+                                {unreadMessages.length} new message{unreadMessages.length > 1 ? "s" : ""}
+                              </span>
+                            </div>
+                        )}
+                        <p>{message.createdAt ? message.createdAt.toDate().toLocaleString() : ""}</p>
+                        <p> {messageUsername[message.userID]} </p>
+                        <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
+                        <button onClick={() => setReplyTo(message.id)}> Reply </button>
+                        <button onClick={() => handleDelete(message.id)}> Delete </button>
+                        <button onClick={() =>  {
+                          setEditingMessageId(message.id); 
+                          setEditText(message.text)}}> Edit </button>
+                        <RepliedMessage clanID={clanID} roomType={roomType} replyTo={message.replyTo} />
 
-                      {editingMessageId === message.id ? (
-                        <>
-                            <textarea value={editText} onChange={(e) => setEditText(e.target.value) }/>
-                            <button onClick={() => {
-                                handleEdit(message.id);
-                                setEditingMessageId(null);
-                                setEditText(null);
-                              }}> Update </button>
-                            <button onClick={() => {
-                              setEditingMessageId(null); 
-                              setEditText(null);}}> Cancel </button>
-                        </>
-                      ) : (
-                        <div id={`message-${message.id}`} data-id={`${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
-                          {renderMessageWithCustomEmojis(message.text)} 
-                          <YoutubeEmbed textMessage={message.text} />
-                          {/* {console.log("Rendering message ID:", message.id)}
-                          {console.log("Last seen message ID:", lastSeenMessageID)} */}
-                          {roomType === "direct" && (
-                            <SeenIcon 
-                              message={message} 
-                              currentUserID={userID} 
-                              lastSeenMessageID={lastStableSeenID} 
-                              showSeenIcon={message.id === lastStableSeenID}
-                              userMap={participantData}/>
+                        {editingMessageId === message.id ? (
+                          <>
+                              <textarea value={editText} onChange={(e) => setEditText(e.target.value) }/>
+                              <button onClick={() => {
+                                  handleEdit(message.id);
+                                  setEditingMessageId(null);
+                                  setEditText(null);
+                                }}> Update </button>
+                              <button onClick={() => {
+                                setEditingMessageId(null); 
+                                setEditText(null);}}> Cancel </button>
+                          </>
+                        ) : (
+                          <div id={`message-${message.id}`} data-id={`${message.id}`} className="whitespace-pre-wrap break-words leading-tight">
+                            {renderMessageWithCustomEmojis(message.text)} 
+                            <YoutubeEmbed textMessage={message.text} />
+                            {/* {console.log("Rendering message ID:", message.id)}
+                            {console.log("Last seen message ID:", lastSeenMessageID)} */}
+                            {roomType === "direct" && (
+                              <SeenIcon 
+                                message={message} 
+                                currentUserID={userID} 
+                                lastSeenMessageID={lastStableSeenID} 
+                                showSeenIcon={message.id === lastStableSeenID}
+                                userMap={participantData}/>
+                            )}
+
+                            {roomType === "group" && (
+                              <SeenIcon
+                                message={message}
+                                currentUserID={userID}
+                                groupLastSeen={userLastSeenMap}   
+                                userMap={participantData}
+                              />
+                            )}
+                          </div>
                           )}
 
-                          {roomType === "group" && (
-                            <SeenIcon
-                              message={message}
-                              currentUserID={userID}
-                              groupLastSeen={userLastSeenMap}   
-                              userMap={participantData}
-                            />
-                          )}
-                        </div>
+                        {message.imageURL && (
+                          <ViewImage src={message.imageURL} />
                         )}
 
-                      {message.imageURL && (
-                        <ViewImage src={message.imageURL} />
-                      )}
-
-                      <button onClick={
-                        // Open the Reaction Picker if null, where if Reaction Picker already set to Message ID and is therefore showing
-                        // When React button is clicked again, we set it to Null to hide the Reaction Picker
-                        () => setShowReactionPicker(showReactionPicker === message.id ? null: message.id)
-                      }>
-                        👍
-                      </button>
-                      {
-                        showReactionPicker === message.id && (
-                          // Update the State and then close the Reaction Picker
-                          <ReactionPicker onSelect={(emoji) => {
-                            handleReaction(message.id, emoji);
-                            setShowReactionPicker(null);
-                            }}
-                          />
-                        )
-                      }
-                      <ReactionsDisplay
-                        key={message.id}
-                        messageId={message.id}
-                        reactions={reactions[message.id] || {}}
-                        reactionsOrder={message.reactionsOrder || []}
-                        clanID={clanID}
-                        roomID={roomID}
-                        roomType={roomType}
-                        userID={userID}
-                        refreshTrigger={refreshReactions}
-                      />
-                    </div>
+                        <button onClick={
+                          // Open the Reaction Picker if null, where if Reaction Picker already set to Message ID and is therefore showing
+                          // When React button is clicked again, we set it to Null to hide the Reaction Picker
+                          () => setShowReactionPicker(showReactionPicker === message.id ? null: message.id)
+                        }>
+                          👍
+                        </button>
+                        {
+                          showReactionPicker === message.id && (
+                            // Update the State and then close the Reaction Picker
+                            <ReactionPicker onSelect={(emoji) => {
+                              handleReaction(message.id, emoji);
+                              setShowReactionPicker(null);
+                              }}
+                            />
+                          )
+                        }
+                        <ReactionsDisplay
+                          key={message.id}
+                          messageId={message.id}
+                          reactions={reactions[message.id] || {}}
+                          reactionsOrder={message.reactionsOrder || []}
+                          clanID={clanID}
+                          roomID={roomID}
+                          roomType={roomType}
+                          userID={userID}
+                          refreshTrigger={refreshReactions}
+                        />
+                      </div>
                   ))}
                   </div>
                 </div>

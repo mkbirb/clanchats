@@ -2,8 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/login": "pages/login.js",
-  "/dashboard": "pages/dashboard.js",
   "/chat/[clan]": "pages/chat/[clan].js",
-  "/": "pages/index.js"
+  "/login": "pages/login.js",
+  "/dashboard": "pages/dashboard.js"
 }
