@@ -18,6 +18,8 @@ import PresenceDisplay from "./PresenceDisplay.js";
 import YoutubeEmbed from "./YoutubeEmbed.js";
 import RoomHeader from "./RoomHeader.js";
 import { debounce } from "lodash";
+import { getMessageToClipboard } from "../utils/getMessageToClipboard.js";
+import { usePopupNotification } from "../customHooks/usePopUpNotification.js";
 
 
 const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipants, targetUserID}) => {
@@ -55,6 +57,8 @@ const ReadMessage = ({clanID, roomType = "direct", participantData, setParticipa
     const [bannerVisibleUntil, setBannerVisibleUntil] = useState(0);
 
     const messagesContainerRef = useRef(null);
+
+    const { showPopup, Popup } = usePopupNotification();
 
     useEffect(() => {
         console.log("Room ID:", roomID);
@@ -349,7 +353,7 @@ const renderMessageWithCustomEmojis = (text) => {
               </>
             ): (
                 <div className="!h-screen flex flex-col">
-                  <div className="flex-1 !overflow-y-auto px-3" ref={messagesContainerRef}>
+                  <div className="relative flex-1 !overflow-y-auto px-3" ref={messagesContainerRef}>
                     {messages.map((message, index) => (
                       <div key={message.id}>
                         {/* Displays the Unread Messages Header */}
@@ -367,6 +371,8 @@ const renderMessageWithCustomEmojis = (text) => {
                         <p> {messageUsername[message.userID]} </p>
                         <p> {message.editedAt ? `Edited At: ${formatDateTime(new Date(message.editedAt))}` : ""} </p>
                         <button onClick={() => setReplyTo(message.id)}> Reply </button>
+                        <button onClick={() => {getMessageToClipboard(message.text), showPopup("Copied Text")}}> Copy Text </button>
+                        <Popup />
                         <button onClick={() => handleDelete(message.id)}> Delete </button>
                         <button onClick={() =>  {
                           setEditingMessageId(message.id); 
