@@ -1268,11 +1268,12 @@ export const deleteClanCalenderEvent = async (clanID, eventID) => {
   await deleteDoc(eventRef);
 };
 
-export const createClanAnnouncements = async (clanID, title, description, type, banner, attachments) => {
+export const createClanAnnouncements = async (clanID, userID, title, description, type, banner, attachments) => {
     const announcementsRef = collection(db, "clan", clanID, "announcements");
 
     await addDoc(announcementsRef, {
         title: title,
+        userID: userID,
         description: description,
         type: type,
         banner: banner,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Modal from 'react-modal';
 
-const ViewImage = ({src, alt="Image"}) => {
+const ViewImage = ({src, alt="Image", className = "max-w-[300px] max-h-[300px] object-contain"}) => {
 
     const [imageBeingViewed, setImageBeingViewed] = useState(false);
 
@@ -28,7 +28,7 @@ const ViewImage = ({src, alt="Image"}) => {
                 <img
                     src={src}
                     alt={alt}
-                    style={{ maxWidth: "300px", maxHeight: "300px" }}
+                    className={className}
                     onClick={() => setImageBeingViewed(true)}
                 />
             </div>

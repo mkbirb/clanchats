@@ -153,7 +153,7 @@ const chat = () => {
                                     ) : (
                                         <>
                                             <div className="w-full">
-                                                <ClanHome clanData={clanData}/>
+                                                <ClanHome clanData={clanData} currentUser={user}/>
                                             </div>
                                         </>
                                     )

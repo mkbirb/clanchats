@@ -17,7 +17,7 @@ import galleryIcon from '../images/galleryIcon.png';
 import membersIcon from '../images/membersIcon.png';
 
 
-const ClanHome = ({clanData}) => {
+const ClanHome = ({clanData, currentUser}) => {
     const [slides, setSlides] = useState(ClanSlidesDefault);
     const router = useRouter();
 
@@ -76,7 +76,7 @@ const ClanHome = ({clanData}) => {
                     <Slideshow images={slides}/>
                 </div>
             </div>
-            <ClanAnnoucements clanData={clanData} />
+            <ClanAnnoucements clanData={clanData} currentUser={currentUser} />
             <PollList clanData={clanData} />
             <div className="flex flex-2 justify-center items-center gap-3 !mt-5">
                 <div className="flex flex-col w-[30%]">
