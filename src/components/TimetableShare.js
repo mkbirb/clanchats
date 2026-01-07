@@ -6,6 +6,7 @@ import useCalculateEndTime from "../customHooks/useCalculateEndTime";
 import useConvertTo12Hour from "../customHooks/useConvertTo12Hour";
 import { getFormattedMinutes } from "../utils/getFormattedMinutes";
 import { getFormattedDate } from "../utils/getFormattedDate";
+import { getMinutesSinceMidnight } from "../utils/getMinutesSinceMidnight";
 
 const TimetableShare = ({timetable, timetableTasks, isOpen, onClose}) => {
     const [shareModeOption, setShareModeOption] = useState("chooseMode");
@@ -45,8 +46,14 @@ const TimetableShare = ({timetable, timetableTasks, isOpen, onClose}) => {
             const timeTableMaterials = Array.isArray(timetable.bringItems) ? timetable.bringItems : [];
             const timeTableNotes = timetable.additionalNotes || "No Additional Notes";
 
-            // Add the Task Text
-            const timetableText = [...timetableTasks].reverse().map((task, index) => {
+            // Sort tasks by their start time, such as Earliest time first
+            const sortedTasks = [...timetableTasks].sort((a, b) => {
+                const aStart = a && a.timeSlot ? getMinutesSinceMidnight(a.timeSlot) : Number.MAX_SAFE_INTEGER;
+                const bStart = b && b.timeSlot ? getMinutesSinceMidnight(b.timeSlot) : Number.MAX_SAFE_INTEGER;
+                return aStart - bStart;
+            });
+
+            const timetableText = sortedTasks.map((task, index) => {
                 const emojiNumber = toEmojiNumber(index + 1);
                 const title = task.title || "Untitled Task";
                 const desc = task.description || "No description";
